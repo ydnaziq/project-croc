@@ -59,7 +59,7 @@
 - Consumes: nothing.
 - Produces: a solution where `dotnet test` runs from the repo root; `CrocGame.Core` assembly; the namespace `CrocGame.Core`.
 
-- [ ] **Step 1: Create the three projects**
+- [x] **Step 1: Create the three projects**
 
 ```bash
 cd /home/ydnaiq/Projects/physics-game
@@ -71,7 +71,7 @@ dotnet sln add Core/CrocGame.Core.csproj Tests/CrocGame.Core.Tests.csproj
 dotnet add Tests/CrocGame.Core.Tests.csproj reference Core/CrocGame.Core.csproj
 ```
 
-- [ ] **Step 2: Set the target frameworks**
+- [x] **Step 2: Set the target frameworks**
 
 Core must be net8.0 so the Godot project can consume it. Tests must be net10.0 because only the .NET 10 runtime is installed.
 
@@ -82,7 +82,7 @@ grep -q 'net10.0' Tests/CrocGame.Core.Tests.csproj || echo "TESTS SHOULD BE net1
 
 Verify `Core/CrocGame.Core.csproj` contains `<TargetFramework>net8.0</TargetFramework>` and `Tests/CrocGame.Core.Tests.csproj` contains `<TargetFramework>net10.0</TargetFramework>`.
 
-- [ ] **Step 3: Write the failing boundary test**
+- [x] **Step 3: Write the failing boundary test**
 
 This test is the enforcement mechanism for the most important constraint in the plan. Create `Tests/BoundaryTests.cs`:
 
@@ -109,12 +109,12 @@ public class BoundaryTests
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it fails**
+- [x] **Step 4: Run the test to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — compile error, `JawZone` does not exist yet.
 
-- [ ] **Step 5: Create the minimal JawZone so the boundary test compiles**
+- [x] **Step 5: Create the minimal JawZone so the boundary test compiles**
 
 Create `Core/JawZone.cs`:
 
@@ -125,12 +125,12 @@ namespace CrocGame.Core;
 public readonly record struct JawZone(float Center, float HalfWidth);
 ```
 
-- [ ] **Step 6: Run the test to verify it passes**
+- [x] **Step 6: Run the test to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — 1 test.
 
-- [ ] **Step 7: Correct project.godot**
+- [x] **Step 7: Correct project.godot**
 
 Apply these four edits to `project.godot`:
 
@@ -153,13 +153,13 @@ And add to the `[rendering]` section:
 textures/canvas_textures/default_texture_filter=0
 ```
 
-- [ ] **Step 8: Ignore build output**
+- [x] **Step 8: Ignore build output**
 
 ```bash
 printf '\n# .NET build output\nbin/\nobj/\n' >> .gitignore
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -183,7 +183,7 @@ never references GodotSharp."
 - Consumes: `JawZone` from Task 1.
 - Produces: `FoodItem` (class, mutable `X` and `Age`), `IMovement.DeltaX(beltSpeed, dt, age)`, `Movement.Constant`, `JawZone.Overlaps(FoodItem)`, `JawZone.DistanceFromCenter(FoodItem)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Touching counts as overlapping — a bite that just grazes the edge of the food is a bite. Create `Tests/JawZoneTests.cs`:
 
@@ -226,12 +226,12 @@ public class JawZoneTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `FoodItem` and `Movement` do not exist.
 
-- [ ] **Step 3: Write IMovement and the Constant strategy**
+- [x] **Step 3: Write IMovement and the Constant strategy**
 
 `FoodItem` needs a movement strategy to construct, so the interface and the simplest
 implementation land here. The other two strategies come in Task 3.
@@ -262,7 +262,7 @@ public static class Movement
 }
 ```
 
-- [ ] **Step 4: Write FoodItem**
+- [x] **Step 4: Write FoodItem**
 
 Create `Core/FoodItem.cs`:
 
@@ -300,7 +300,7 @@ public sealed class FoodItem
 }
 ```
 
-- [ ] **Step 5: Extend JawZone**
+- [x] **Step 5: Extend JawZone**
 
 Replace `Core/JawZone.cs` with:
 
@@ -323,12 +323,12 @@ public readonly record struct JawZone(float Center, float HalfWidth)
 }
 ```
 
-- [ ] **Step 6: Run to verify it passes**
+- [x] **Step 6: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task and the boundary test from Task 1.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Core/JawZone.cs Core/FoodItem.cs Core/Movement.cs Tests/JawZoneTests.cs
@@ -347,7 +347,7 @@ git commit -m "feat: jaw zone overlap test, FoodItem, and constant movement"
 - Consumes: `IMovement`, `Movement.Constant` from Task 2.
 - Produces: `Movement.Stutter`, `Movement.Bounce`, `Movement.ByName(string)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `Tests/MovementTests.cs`:
 
@@ -424,12 +424,12 @@ public class MovementTests
 
 Add `using System;` at the top of the test file for `MathF`.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `Movement.Stutter`, `Movement.Bounce`, `Movement.ByName` do not exist.
 
-- [ ] **Step 3: Implement the two strategies**
+- [x] **Step 3: Implement the two strategies**
 
 Replace the `Movement` static class in `Core/Movement.cs` with:
 
@@ -483,12 +483,12 @@ public static class Movement
 
 Add `using System;` at the top of `Core/Movement.cs`.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core/Movement.cs Tests/MovementTests.cs
@@ -507,7 +507,7 @@ git commit -m "feat: stutter and bounce movement strategies"
 - Consumes: `FoodItem`, `IMovement` from Task 2.
 - Produces: `Belt(float retireX)`, `Belt.Items`, `Belt.Add(FoodItem)`, `Belt.Remove(FoodItem)`, `Belt.Advance(float beltSpeed, float dt)` returning `IReadOnlyList<FoodItem>` of items retired this frame.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `Tests/BeltTests.cs`:
 
@@ -600,12 +600,12 @@ public class BeltTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `Belt` does not exist.
 
-- [ ] **Step 3: Implement Belt**
+- [x] **Step 3: Implement Belt**
 
 Create `Core/Belt.cs`:
 
@@ -656,12 +656,12 @@ public sealed class Belt
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core/Belt.cs Tests/BeltTests.cs
@@ -682,7 +682,7 @@ git commit -m "feat: belt advances and retires items"
 
 All numbers here come from section 5 of the spec and are expected to change after playtesting. The tests assert shape — monotonic, capped, gated — not exact values, so tuning does not break the suite.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `Tests/DifficultyTests.cs`:
 
@@ -772,12 +772,12 @@ public class DifficultyTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `Difficulty` does not exist.
 
-- [ ] **Step 3: Implement Difficulty**
+- [x] **Step 3: Implement Difficulty**
 
 Create `Core/Difficulty.cs`:
 
@@ -821,12 +821,12 @@ public readonly record struct Difficulty(
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core/Difficulty.cs Tests/DifficultyTests.cs
@@ -845,7 +845,7 @@ git commit -m "feat: difficulty curve as a pure function of items eaten"
 - Consumes: nothing.
 - Produces: `IRandomSource` with `float NextFloat()` and `int NextInt(int maxExclusive)`; `SeededRandom(int seed)`; `FoodType` record; `FoodTable.FromJson(string)`, `FoodTable.Types`, `FoodTable.Available(int eaten, bool edible)`.
 
-- [ ] **Step 1: Write the food table data**
+- [x] **Step 1: Write the food table data**
 
 The five edible foods already have 16x16 sprites in `Art/ExportedSprites/`. Widths are the full sprite width; `HalfWidth` is derived later by the spawn director. Create `Resources/food.json`:
 
@@ -861,7 +861,7 @@ The five edible foods already have 16x16 sprites in `Art/ExportedSprites/`. Widt
 
 Inedible entries are added in the follow-up plan, once their sprites exist. `FoodTable.Available(eaten, edible: false)` returning empty is a supported state and the spawn director must handle it.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `Tests/FoodTableTests.cs`:
 
@@ -953,12 +953,12 @@ public class FoodTableTests
 }
 ```
 
-- [ ] **Step 3: Run to verify it fails**
+- [x] **Step 3: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `FoodTable` and `SeededRandom` do not exist.
 
-- [ ] **Step 4: Implement the random source**
+- [x] **Step 4: Implement the random source**
 
 Injecting randomness is what makes a run reproducible from a seed, which is what makes the spawn director testable at all. Create `Core/RandomSource.cs`:
 
@@ -989,7 +989,7 @@ public sealed class SeededRandom : IRandomSource
 }
 ```
 
-- [ ] **Step 5: Implement the food table**
+- [x] **Step 5: Implement the food table**
 
 Create `Core/FoodTable.cs`:
 
@@ -1033,12 +1033,12 @@ public sealed class FoodTable
 }
 ```
 
-- [ ] **Step 6: Run to verify it passes**
+- [x] **Step 6: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Core/RandomSource.cs Core/FoodTable.cs Resources/food.json Tests/FoodTableTests.cs
@@ -1059,7 +1059,7 @@ git commit -m "feat: seeded random source and food table"
 
 **Movement selection rule:** the director rolls once per spawn. Below `StutterWeight` the item gets `Movement.Stutter`; below `StutterWeight + BounceWeight` it gets `Movement.Bounce`; otherwise it keeps the movement its `FoodType` declares. This is why a food's declared movement is a default rather than a guarantee.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `Tests/SpawnDirectorTests.cs`:
 
@@ -1176,12 +1176,12 @@ public class SpawnDirectorTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `SpawnDirector` does not exist.
 
-- [ ] **Step 3: Implement SpawnDirector**
+- [x] **Step 3: Implement SpawnDirector**
 
 Create `Core/SpawnDirector.cs`:
 
@@ -1261,12 +1261,12 @@ public sealed class SpawnDirector
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core/SpawnDirector.cs Tests/SpawnDirectorTests.cs
@@ -1287,7 +1287,7 @@ git commit -m "feat: seeded spawn director driven by the difficulty curve"
 
 **Scoring rule:** a hit increments the combo first, then adds `item.Score * min(Combo, 5)`. The multiplier caps at 5 so a long run's score stays a function of survival rather than of one unbroken streak.
 
-- [ ] **Step 1: Write the failing judge tests**
+- [x] **Step 1: Write the failing judge tests**
 
 Create `Tests/ChompJudgeTests.cs`:
 
@@ -1367,12 +1367,12 @@ public class ChompJudgeTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `ChompJudge` does not exist.
 
-- [ ] **Step 3: Implement ChompJudge**
+- [x] **Step 3: Implement ChompJudge**
 
 Create `Core/ChompJudge.cs`:
 
@@ -1419,12 +1419,12 @@ public static class ChompJudge
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Write the failing run state tests**
+- [x] **Step 5: Write the failing run state tests**
 
 Create `Tests/RunStateTests.cs`:
 
@@ -1534,12 +1534,12 @@ public class RunStateTests
 }
 ```
 
-- [ ] **Step 6: Run to verify it fails**
+- [x] **Step 6: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `RunState` does not exist.
 
-- [ ] **Step 7: Implement RunState**
+- [x] **Step 7: Implement RunState**
 
 Create `Core/RunState.cs`:
 
@@ -1579,12 +1579,12 @@ public sealed class RunState
 }
 ```
 
-- [ ] **Step 8: Run to verify it passes**
+- [x] **Step 8: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add Core/ChompJudge.cs Core/RunState.cs Tests/ChompJudgeTests.cs Tests/RunStateTests.cs
@@ -1603,7 +1603,7 @@ git commit -m "feat: chomp judging and run state scoring"
 - Consumes: everything from Tasks 2-8.
 - Produces: `GameEvent` and its subtypes; `GameSession(FoodTable, IRandomSource, JawZone, float spawnX, float retireX)`, `GameSession.State`, `GameSession.Items`, `GameSession.Tick(float dt)`, `GameSession.Chomp()`, both returning `IReadOnlyList<GameEvent>`.
 
-- [ ] **Step 1: Write the event types**
+- [x] **Step 1: Write the event types**
 
 Create `Core/GameEvent.cs`:
 
@@ -1631,7 +1631,7 @@ public sealed record StrikeAdded(int Strikes) : GameEvent;
 public sealed record RunEnded(int FinalScore, int Eaten) : GameEvent;
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `Tests/GameSessionTests.cs`:
 
@@ -1799,12 +1799,12 @@ public class GameSessionTests
 }
 ```
 
-- [ ] **Step 3: Run to verify it fails**
+- [x] **Step 3: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `GameSession` does not exist.
 
-- [ ] **Step 4: Implement GameSession**
+- [x] **Step 4: Implement GameSession**
 
 Create `Core/GameSession.cs`:
 
@@ -1910,12 +1910,12 @@ public sealed class GameSession
 }
 ```
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add Core/GameEvent.cs Core/GameSession.cs Tests/GameSessionTests.cs
@@ -1936,7 +1936,7 @@ git commit -m "feat: GameSession facade emitting events for the scene layer"
 
 `SaveData.FromJson` must never throw. A corrupt or missing save returns defaults, because losing a high score is annoying and crashing on launch is fatal.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `Tests/SaveDataTests.cs`:
 
@@ -2012,12 +2012,12 @@ public class SaveDataTests
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `dotnet test`
 Expected: FAIL — `SaveData` does not exist.
 
-- [ ] **Step 3: Implement SaveData**
+- [x] **Step 3: Implement SaveData**
 
 Create `Core/SaveData.cs`:
 
@@ -2073,12 +2073,12 @@ public sealed class InMemorySaveStore : ISaveStore
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `dotnet test`
 Expected: PASS — every test green, including the new ones from this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core/SaveData.cs Tests/SaveDataTests.cs
@@ -2111,7 +2111,7 @@ only the `ProjectReference` to Core.
 - Consumes: `GameSession`, `FoodTable`, `SeededRandom`, `JawZone`, `ISaveStore`, `SaveData` from Core.
 - Produces: `CrocGame.GameRoot` (Godot `Node2D`), `CrocGame.GodotSaveStore : ISaveStore`.
 
-- [ ] **Step 1: Create the Godot C# project file**
+- [x] **Step 1: Create the Godot C# project file**
 
 Create `CrocGame.csproj`:
 
@@ -2141,7 +2141,7 @@ Create `CrocGame.csproj`:
 </Project>
 ```
 
-- [ ] **Step 2: Verify it restores**
+- [x] **Step 2: Verify it restores**
 
 Run: `dotnet restore CrocGame.csproj`
 Expected: restore succeeds, pulling `Godot.NET.Sdk` from nuget.org.
@@ -2157,14 +2157,14 @@ dotnet sln CrocGame.slnx add CrocGame.csproj
 dotnet test    # the Core suite must still pass
 ```
 
-- [ ] **Step 3: Make food.json reachable at runtime**
+- [x] **Step 3: Make food.json reachable at runtime**
 
 Core loads the table from a string, so the Godot layer reads the file. Godot only
 exports files it knows about; `Resources/food.json` is inside the project directory,
 so `res://Resources/food.json` resolves. Confirm the file is at
 `/home/ydnaiq/Projects/physics-game/Resources/food.json` from Task 6.
 
-- [ ] **Step 4: Write the save store**
+- [x] **Step 4: Write the save store**
 
 Create `Scripts/GodotSaveStore.cs`:
 
@@ -2207,7 +2207,7 @@ public sealed class GodotSaveStore : ISaveStore
 }
 ```
 
-- [ ] **Step 5: Write the game root**
+- [x] **Step 5: Write the game root**
 
 The belt runs across the lower third of the 320x180 canvas. The jaws sit at x=100,
 which is `JawZone.Center`; items spawn off-screen left and retire off-screen right.
@@ -2275,7 +2275,7 @@ public partial class GameRoot : Node2D
 }
 ```
 
-- [ ] **Step 6: Create the main scene**
+- [x] **Step 6: Create the main scene**
 
 Create `Scenes/Main.tscn`:
 
@@ -2288,7 +2288,7 @@ Create `Scenes/Main.tscn`:
 script = ExtResource("1")
 ```
 
-- [ ] **Step 7: Register the main scene**
+- [x] **Step 7: Register the main scene**
 
 Add to the `[application]` section of `project.godot`:
 
@@ -2306,7 +2306,7 @@ ending with `RunEnded`. Nothing is drawn yet — that is Task 12.
 If the C# build fails inside Godot, the most likely cause is the target framework:
 confirm `CrocGame.csproj` and `Core/CrocGame.Core.csproj` both say `net8.0`.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add CrocGame.csproj CrocGame.sln Scenes/Main.tscn Scripts/GameRoot.cs Scripts/GodotSaveStore.cs project.godot
@@ -2330,7 +2330,7 @@ git commit -m "feat: boot a Core game session from Godot"
 `idle` at frames 0-3, `celebrate` at 4-11, `eat` at 12-17. This ordering comes from
 `Art/ExportedSprites/croc_sheet.json`.
 
-- [ ] **Step 1: Add the chomp input action**
+- [x] **Step 1: Add the chomp input action**
 
 Add to `project.godot` (create the `[input]` section if it does not exist):
 
@@ -2350,7 +2350,7 @@ If Godot rejects this literal on load, delete the block and add the three events
 hand in Project Settings, Input Map, action name `chomp`: Space, Left Mouse Button,
 and a touch event.
 
-- [ ] **Step 2: Write the belt view**
+- [x] **Step 2: Write the belt view**
 
 Create `Scripts/BeltView.cs`:
 
@@ -2424,7 +2424,7 @@ public partial class BeltView : Node2D
 }
 ```
 
-- [ ] **Step 3: Write the croc view**
+- [x] **Step 3: Write the croc view**
 
 Create `Scripts/CrocView.cs`:
 
@@ -2484,7 +2484,7 @@ public partial class CrocView : AnimatedSprite2D
 }
 ```
 
-- [ ] **Step 4: Write the HUD**
+- [x] **Step 4: Write the HUD**
 
 Create `Scripts/Hud.cs`:
 
@@ -2515,7 +2515,7 @@ public partial class Hud : Node2D
 }
 ```
 
-- [ ] **Step 5: Wire them into GameRoot**
+- [x] **Step 5: Wire them into GameRoot**
 
 Replace `_Ready` and `_Process` in `Scripts/GameRoot.cs`, and add `_UnhandledInput`:
 
@@ -2601,7 +2601,7 @@ Press Play. Expected:
 
 If sprites look blurry, `default_texture_filter=0` did not take — recheck Task 1 Step 7.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Scripts/BeltView.cs Scripts/CrocView.cs Scripts/Hud.cs Scripts/GameRoot.cs project.godot
@@ -2620,7 +2620,7 @@ git commit -m "feat: render belt, croc, and HUD from Core events"
 - Consumes: `SaveData`, `ISaveStore`, `RunEnded` from Core.
 - Produces: `CrocGame.ScreenOverlay` with `Show(string title, string subtitle)` and `Hide()`; `GameRoot` gains a `Phase` enum (`Title`, `Running`, `GameOver`).
 
-- [ ] **Step 1: Write the overlay**
+- [x] **Step 1: Write the overlay**
 
 Create `Scripts/ScreenOverlay.cs`:
 
@@ -2667,7 +2667,7 @@ public partial class ScreenOverlay : Node2D
 }
 ```
 
-- [ ] **Step 2: Add the phase machine to GameRoot**
+- [x] **Step 2: Add the phase machine to GameRoot**
 
 Add the field and enum to `GameRoot`:
 
@@ -2688,7 +2688,7 @@ In `_Ready`, after the HUD is added, replace the `StartRun();` call with:
         _overlay.Show("CROC", best > 0 ? $"best {best} - press to start" : "press to start");
 ```
 
-- [ ] **Step 3: Gate the loop on the phase**
+- [x] **Step 3: Gate the loop on the phase**
 
 Replace `_Process` with:
 
@@ -2721,7 +2721,7 @@ Replace `_Process` with:
     }
 ```
 
-- [ ] **Step 4: Handle the end of a run**
+- [x] **Step 4: Handle the end of a run**
 
 Replace the `case RunEnded ended:` arm in `Render` with:
 
@@ -2753,7 +2753,7 @@ And add:
     }
 ```
 
-- [ ] **Step 5: Add BeltView.Clear**
+- [x] **Step 5: Add BeltView.Clear**
 
 Add to `Scripts/BeltView.cs`:
 
@@ -2776,12 +2776,12 @@ Press Play. Expected:
 - Quit and relaunch: the title screen now shows your best score, proving the save
   round-tripped through `user://crocgame.save`.
 
-- [ ] **Step 7: Full verification**
+- [x] **Step 7: Full verification**
 
 Run: `dotnet test`
 Expected: PASS — the full Core suite, unchanged in size from Task 10. The Godot layer added no Core behavior.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add Scripts/ScreenOverlay.cs Scripts/GameRoot.cs Scripts/BeltView.cs
@@ -2789,6 +2789,13 @@ git commit -m "feat: title, game over, restart, and persisted best score"
 ```
 
 ---
+
+## Status
+
+Code-complete as of 2026-08-28; every task's deliverable is on disk and the Core suite
+passes with 91 tests. The three unticked steps are all the same thing: nobody has run
+the game in the Godot editor yet. The tasks were executed in batches rather than one
+commit per task, so the git history has four commits rather than thirteen.
 
 ## Done when
 
