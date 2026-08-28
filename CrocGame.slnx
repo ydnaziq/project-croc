@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/CrocGame.Core.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/CrocGame.Core.Tests.csproj" />
+  </Folder>
+  <Project Path="CrocGame.csproj">
+    <BuildType Project="Debug" />
+  </Project>
+</Solution>

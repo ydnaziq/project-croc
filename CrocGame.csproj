@@ -1,0 +1,24 @@
+<Project Sdk="Godot.NET.Sdk/4.7.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>CrocGame</RootNamespace>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    This project file lives at the repo root, so the SDK's default globbing would
+    otherwise compile Core/, Tests/, and Godot's own generated sources under .godot/
+    into this assembly - producing duplicate assembly attributes and dragging xunit
+    in as a game dependency. The scene layer is Scripts/ and nothing else.
+  -->
+  <ItemGroup>
+    <Compile Remove="Core/**" />
+    <Compile Remove="Tests/**" />
+    <Compile Remove=".godot/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Core/CrocGame.Core.csproj" />
+  </ItemGroup>
+</Project>

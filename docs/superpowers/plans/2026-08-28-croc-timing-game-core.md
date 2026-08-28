@@ -25,7 +25,7 @@
 
 | File | Responsibility |
 |---|---|
-| `CrocGame.sln` | Ties the three projects together. |
+| `CrocGame.slnx` | Ties the three projects together. |
 | `Core/CrocGame.Core.csproj` | The rules library. net8.0, no Godot. |
 | `Core/JawZone.cs` | The overlap test that defines "between the teeth". |
 | `Core/FoodItem.cs` | One item on the belt. |
@@ -50,7 +50,7 @@
 ### Task 1: Solution scaffold, rename to CrocGame, project settings
 
 **Files:**
-- Create: `CrocGame.sln`, `Core/CrocGame.Core.csproj`, `Tests/CrocGame.Core.Tests.csproj`
+- Create: `CrocGame.slnx`, `Core/CrocGame.Core.csproj`, `Tests/CrocGame.Core.Tests.csproj`
 - Create: `Tests/BoundaryTests.cs`
 - Modify: `project.godot`
 - Modify: `.gitignore`
@@ -66,7 +66,7 @@ cd /home/ydnaiq/Projects/physics-game
 dotnet new classlib -o Core -n CrocGame.Core
 dotnet new xunit    -o Tests -n CrocGame.Core.Tests
 rm -f Core/Class1.cs Tests/UnitTest1.cs
-dotnet new sln -n CrocGame
+dotnet new sln -n CrocGame   # .NET 10 writes CrocGame.slnx, not .sln
 dotnet sln add Core/CrocGame.Core.csproj Tests/CrocGame.Core.Tests.csproj
 dotnet add Tests/CrocGame.Core.Tests.csproj reference Core/CrocGame.Core.csproj
 ```
@@ -2105,7 +2105,7 @@ only the `ProjectReference` to Core.
 
 **Files:**
 - Create: `CrocGame.csproj`, `Scenes/Main.tscn`, `Scripts/GameRoot.cs`, `Scripts/GodotSaveStore.cs`
-- Modify: `project.godot`, `CrocGame.sln`
+- Modify: `project.godot`, `CrocGame.slnx`
 
 **Interfaces:**
 - Consumes: `GameSession`, `FoodTable`, `SeededRandom`, `JawZone`, `ISaveStore`, `SaveData` from Core.
@@ -2123,6 +2123,18 @@ Create `CrocGame.csproj`:
     <RootNamespace>CrocGame</RootNamespace>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <!--
+    This project file lives at the repo root, so the SDK's default globbing would
+    otherwise compile Core/, Tests/, and Godot's generated sources under .godot/ into
+    this assembly - producing duplicate assembly attributes and dragging xunit in as
+    a game dependency. The scene layer is Scripts/ and nothing else.
+  -->
+  <ItemGroup>
+    <Compile Remove="Core/**" />
+    <Compile Remove="Tests/**" />
+    <Compile Remove=".godot/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="Core/CrocGame.Core.csproj" />
   </ItemGroup>
@@ -2135,13 +2147,13 @@ Run: `dotnet restore CrocGame.csproj`
 Expected: restore succeeds, pulling `Godot.NET.Sdk` from nuget.org.
 
 If restore fails because the machine is offline, stop and resolve that before
-continuing — but do **not** add `CrocGame.csproj` to `CrocGame.sln` in that case, so
+continuing — but do **not** add `CrocGame.csproj` to `CrocGame.slnx` in that case, so
 that `dotnet test` keeps working for the Core suite.
 
 If it restores cleanly, add it to the solution:
 
 ```bash
-dotnet sln CrocGame.sln add CrocGame.csproj
+dotnet sln CrocGame.slnx add CrocGame.csproj
 dotnet test    # the Core suite must still pass
 ```
 

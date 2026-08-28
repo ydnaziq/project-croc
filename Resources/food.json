@@ -1,0 +1,7 @@
+[
+  { "id": "hotdog", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
+  { "id": "pizza",  "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
+  { "id": "burger", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
+  { "id": "donut",  "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 },
+  { "id": "pie",    "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 }
+]
