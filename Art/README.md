@@ -72,6 +72,18 @@ and chews, so you can draw whatever it is eating separately.
 Which items exist is `Resources/food.json`; how often they appear is
 `Core/Difficulty.cs`. Adding a food is one JSON row plus one PNG.
 
+## Arena — `ExportedSprites/arena.png`
+
+The full 180x320 backdrop, authored by `Tools/arena_gen.py`: bunting, an EAT OFF
+banner, a stage shelf, crowd silhouettes, and a plank floor. It replaced a single
+brick tile stamped across the screen, which had no structure above 16px and read as
+noise. Marquee bulbs are animated in code on top of it.
+
+## Fonts — `Fonts/`
+
+Silkscreen (SIL Open Font License, see `Fonts/OFL.txt`). A pixel font drawn on an 8px
+grid, so only sizes 8, 16, and 24 are used - anything else resamples and goes soft.
+
 ## Audio — `Audio/*.ogg`
 
 Six generated sound effects. See `Audio/README.md` for the prompts and the

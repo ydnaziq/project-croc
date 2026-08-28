@@ -36,20 +36,20 @@ public partial class MatchHud : Node2D
     {
         ZIndex = 20;
 
-        _clock = MakeLabel(new Vector2(0, 4), 14, "f8f8f8", HorizontalAlignment.Center);
-        _playerScore = MakeLabel(new Vector2(0, GameRoot.BeltY + 42), 16, "58d854", HorizontalAlignment.Center);
-        _combo = MakeLabel(new Vector2(0, GameRoot.BeltY + 62), 11, "f8d878", HorizontalAlignment.Center);
-        _money = MakeLabel(new Vector2(-6, 4), 9, "f8d878", HorizontalAlignment.Right);
+        _clock = MakeLabel(new Vector2(0, 6), Ui.Body, Ui.Paper, HorizontalAlignment.Center);
+        _playerScore = MakeLabel(new Vector2(0, GameRoot.BeltY + 42), Ui.Body, Ui.Green, HorizontalAlignment.Center);
+        _combo = MakeLabel(new Vector2(0, GameRoot.BeltY + 62), Ui.Small, Ui.Gold, HorizontalAlignment.Center);
+        _money = MakeLabel(new Vector2(-6, 8), Ui.Small, Ui.Gold, HorizontalAlignment.Right);
     }
 
-    private Label MakeLabel(Vector2 position, int size, string color, HorizontalAlignment align)
+    private Label MakeLabel(Vector2 position, int size, Color color, HorizontalAlignment align)
     {
         var label = new Label
         {
             Position = position,
             Size = new Vector2(GameRoot.ViewportWidth, size + 4),
             HorizontalAlignment = align,
-            LabelSettings = new LabelSettings { FontSize = size, FontColor = new Color(color) },
+            LabelSettings = Ui.Text(size, color),
         };
         AddChild(label);
         return label;
@@ -58,7 +58,7 @@ public partial class MatchHud : Node2D
     public void Update(MatchState state, int rivalScore, float frenzyFraction, int money)
     {
         _clock.Text = Mathf.CeilToInt(state.TimeRemaining).ToString();
-        _clock.LabelSettings.FontColor = state.TimeRemaining <= 5f ? new Color("f83800") : new Color("f8f8f8");
+        _clock.LabelSettings.FontColor = state.TimeRemaining <= 5f ? Ui.Red : Ui.Paper;
 
         _playerScore.Text = state.Score.ToString();
         _money.Text = $"${money}";
@@ -105,27 +105,29 @@ public partial class MatchHud : Node2D
     {
         var w = GameRoot.ViewportWidth;
 
-        // Tug of war.
-        DrawRect(new Rect2(6, BarY - 1, w - 12, BarHeight + 2), FrameColor);
-        var inner = w - 14;
-        var playerWidth = Mathf.Max(1f, inner * _playerShare);
-        DrawRect(new Rect2(7, BarY, playerWidth, BarHeight), PlayerColor);
-        DrawRect(new Rect2(7 + playerWidth, BarY, inner - playerWidth, BarHeight), RivalColor);
+        // Tug of war: one framed bar split by where the score actually sits, so the
+        // player reads who is ahead without comparing two numbers under time pressure.
+        var bar = new Rect2(6, BarY - 1, w - 12, BarHeight + 2);
+        Ui.Panel(this, bar, RivalColor);
 
-        // Frenzy meter, only while it matters.
+        var inner = bar.Size.X - 2f;
+        var playerWidth = Mathf.Clamp(inner * _playerShare, 0f, inner);
+        if (playerWidth >= 1f) DrawRect(new Rect2(bar.Position.X + 1, BarY, playerWidth, BarHeight), PlayerColor);
+
+        // A tick at the halfway mark: the line you are trying to stay right of.
+        DrawRect(new Rect2(bar.Position.X + 1 + inner / 2f, BarY - 1, 1, BarHeight + 2), FrameColor);
+
         if (_frenzyFraction > 0f)
         {
-            DrawRect(new Rect2(6, FrenzyBarY - 1, w - 12, 5f), FrameColor);
-            DrawRect(new Rect2(7, FrenzyBarY, (w - 14) * _frenzyFraction, 3f), FrenzyColor);
+            Ui.Meter(this, new Rect2(6, FrenzyBarY - 1, w - 12, 5f), _frenzyFraction,
+                     FrenzyColor, new Color("2a2a3a"));
         }
 
         // Strike pips, bottom left: filled means spent.
         for (var i = 0; i < MatchState.MaxStrikes; i++)
         {
-            var box = new Rect2(6 + i * 9, GameRoot.ViewportHeight - 14, 7, 7);
-            DrawRect(box, FrameColor);
-            DrawRect(new Rect2(box.Position + Vector2.One, box.Size - Vector2.One * 2f),
-                     i < _strikes ? new Color("f83800") : new Color("585858"));
+            Ui.Panel(this, new Rect2(6 + i * 10, GameRoot.ViewportHeight - 14, 8, 8),
+                     i < _strikes ? Ui.Red : new Color("585858"));
         }
     }
 }

@@ -7,7 +7,7 @@ public class DifficultyTests
 {
     [Fact]
     public void StartsAtTheOpeningBeltSpeed() =>
-        Assert.Equal(40f, Difficulty.ForEaten(0).BeltSpeed, precision: 2);
+        Assert.Equal(55f, Difficulty.ForEaten(0).BeltSpeed, precision: 2);
 
     [Fact]
     public void BeltSpeedIncreasesMonotonically()
@@ -23,7 +23,7 @@ public class DifficultyTests
 
     [Fact]
     public void BeltSpeedIsCapped() =>
-        Assert.Equal(220f, Difficulty.ForEaten(10_000).BeltSpeed, precision: 2);
+        Assert.Equal(260f, Difficulty.ForEaten(10_000).BeltSpeed, precision: 2);
 
     [Fact]
     public void SpacingNarrowsMonotonicallyAndIsFloored()
@@ -35,7 +35,7 @@ public class DifficultyTests
             Assert.True(min <= previous, $"spacing widened at {eaten} eaten");
             previous = min;
         }
-        Assert.Equal(0.35f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
+        Assert.Equal(0.30f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
     }
 
     [Fact]
@@ -46,6 +46,21 @@ public class DifficultyTests
             var d = Difficulty.ForEaten(eaten);
             Assert.True(d.SpacingMax >= d.SpacingMin, $"inverted spacing at {eaten} eaten");
         }
+    }
+
+    [Fact]
+    public void GapsBetweenItemsGetMoreVariableAsTheMatchGoesOn()
+    {
+        // Spread relative to the gap itself: a late gap should be far less
+        // predictable than an early one, so the player cannot settle into a rhythm.
+        var early = Difficulty.ForEaten(0);
+        var late = Difficulty.ForEaten(60);
+
+        var earlySpread = (early.SpacingMax - early.SpacingMin) / early.SpacingMin;
+        var lateSpread = (late.SpacingMax - late.SpacingMin) / late.SpacingMin;
+
+        Assert.True(lateSpread > earlySpread * 2f,
+            $"gap variability barely moved: {earlySpread:F2} then {lateSpread:F2}");
     }
 
     [Fact]

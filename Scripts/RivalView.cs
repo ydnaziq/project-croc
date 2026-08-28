@@ -28,7 +28,7 @@ public partial class RivalView : Node2D
             Position = new Vector2(0, -48),
             Size = new Vector2(GameRoot.ViewportWidth, 12),
             HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 9, FontColor = new Color("f8f8f8") },
+            LabelSettings = Ui.Text(Ui.Small, Ui.Paper),
         };
         AddChild(_name);
 
@@ -37,7 +37,7 @@ public partial class RivalView : Node2D
             Position = new Vector2(0, 36),
             Size = new Vector2(GameRoot.ViewportWidth, 18),
             HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 14, FontColor = new Color("f87858") },
+            LabelSettings = Ui.Text(Ui.Body, Ui.Rival),
         };
         AddChild(_score);
     }
@@ -57,6 +57,7 @@ public partial class RivalView : Node2D
         var frames = new SpriteFrames();
         frames.RemoveAnimation("default");
         AddAnimation(frames, sheet, "idle", 0, 4, 5f, true);
+        AddAnimation(frames, sheet, "celebrate", 4, 8, 12f, false);
         AddAnimation(frames, sheet, "eat", 12, 6, 18f, false);
 
         _sprite = new AnimatedSprite2D { SpriteFrames = frames, Scale = new Vector2(2, 2) };
@@ -87,11 +88,48 @@ public partial class RivalView : Node2D
     {
         _score.Text = score.ToString();
         _bitePulse = 1f;
-        _sprite?.Play("eat");
+
+        // Never interrupt a reaction with a chew; the reaction is the point.
+        if (_sprite is not null && _sprite.Animation != "celebrate") _sprite.Play("eat");
     }
+
+    /// <summary>The rival gloats, with the animation to match.</summary>
+    public void Gloat(string line)
+    {
+        _sprite?.Play("celebrate");
+        Say(line, Bark.Mood.Smug);
+    }
+
+    /// <summary>The rival is losing ground.</summary>
+    public void Rattle(string line) => Say(line, Bark.Mood.Rattled);
+
+    /// <summary>The rival is being demolished.</summary>
+    public void Panic(string line)
+    {
+        _panicShake = 1f;
+        Say(line, Bark.Mood.Panicked);
+    }
+
+    private void Say(string line, Bark.Mood mood)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return;
+
+        _bark?.QueueFree();
+        _bark = Bark.Create(new Vector2(0, -34), line, mood);
+        AddChild(_bark);
+    }
+
+    private Bark? _bark;
+    private float _panicShake;
 
     public override void _Process(double delta)
     {
+        if (_panicShake > 0f && _sprite is not null)
+        {
+            _panicShake = Mathf.Max(0f, _panicShake - (float)delta * 1.6f);
+            _sprite.Position = new Vector2(Mathf.Sin(_panicShake * 60f) * 2f * _panicShake, 0f);
+        }
+
         if (_bitePulse <= 0f) return;
 
         _bitePulse = Mathf.Max(0f, _bitePulse - (float)delta * 5f);

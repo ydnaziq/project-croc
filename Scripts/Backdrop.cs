@@ -1,91 +1,65 @@
-using System.Linq;
 using Godot;
 
 namespace CrocGame;
 
 /// <summary>
-/// The arena, built entirely from tiles in Art/ExportedSprites/tileset.png.
+/// The arena, drawn from one authored image (Art/Tools/arena_gen.py) plus a few
+/// animated lights on top.
 ///
-/// Everything on screen that is not a character comes from the same 16x16 tileset the
-/// cast was drawn against. That is the whole point: a backdrop of flat rectangles in
-/// arbitrary colours is what makes pixel art look like a prototype.
+/// It used to tile a single brick tile across the whole screen. A 16x16 pattern
+/// repeated two hundred times has no structure above 16px, which is why it read as
+/// noise. One image with real shapes - bunting, a banner, a stage shelf, a crowd, a
+/// plank floor - gives the eye somewhere to land.
 /// </summary>
 public partial class Backdrop : Node2D
 {
-    private const int Tile = 16;
+    private static readonly Color BulbOn = new("f8d878");
+    private static readonly Color BulbOff = new("a88030");
+    private static readonly Color Ink = new("000000");
 
-    // Tile ids from Art/README.md, laid out row-major in a 4-wide grid.
-    private const int TileStone = 3;
-    private const int TileDirt = 5;
-    private const int TileBrick = 7;
-    private const int TileBackground = 17;
-    private const int TileGround = 18;
-
-    private Texture2D _tileset = null!;
-    private Texture2D[] _crowd = System.Array.Empty<Texture2D>();
+    private Texture2D? _arena;
+    private float _time;
 
     public override void _Ready()
     {
-        _tileset = ResourceLoader.Load<Texture2D>("res://Art/ExportedSprites/tileset.png");
-        if (_tileset is null) GD.PushError("Missing tileset.png; the arena will be blank.");
-
-        _crowd = new[] { "penguin", "cat", "robot", "slime" }
-            .Select(id => ResourceLoader.Load<Texture2D>($"res://Art/ExportedSprites/{id}.png"))
-            .Where(t => t is not null)
-            .ToArray();
-
         ZIndex = -10;
+
+        _arena = ResourceLoader.Load<Texture2D>("res://Art/ExportedSprites/arena.png");
+        if (_arena is null) GD.PushError("Missing arena.png; run Art/Tools/arena_gen.py.");
+    }
+
+    public override void _Process(double delta)
+    {
+        _time += (float)delta;
+        QueueRedraw();
     }
 
     public override void _Draw()
     {
-        if (_tileset is null) return;
-
-        var w = (int)GameRoot.ViewportWidth;
-        var h = (int)GameRoot.ViewportHeight;
-
-        // Back wall behind everything.
-        FillRegion(0, 0, w, h, TileBackground);
-
-        // The rival's stage sits high; a brick shelf separates the two halves and
-        // sits below the rival's score rather than through it.
-        FillRegion(0, 120, w, 32, TileBrick);
-        FillRegion(0, 120, w, Tile, TileStone);
-
-        // The croc's own floor: brick wall, then a dirt strip under the conveyor.
-        FillRegion(0, (int)GameRoot.BeltY + 24, w, 48, TileBrick);
-        FillRegion(0, h - 32, w, Tile, TileGround);
-        FillRegion(0, h - 16, w, Tile, TileDirt);
-
-        DrawCrowd();
-    }
-
-    /// <summary>Spectators: the rest of the cast, dimmed and small, watching the bout.</summary>
-    private void DrawCrowd()
-    {
-        if (_crowd.Length == 0) return;
-
-        var dim = new Color(0.45f, 0.45f, 0.6f, 1f);
-
-        for (var i = 0; i < 6; i++)
+        if (_arena is not null)
         {
-            var texture = _crowd[i % _crowd.Length];
-            var x = 6 + i * 30;
-            var y = 158 + (i % 2 == 0 ? 0 : 3);  // uneven heads read as a crowd, not a row
-            DrawTextureRect(texture, new Rect2(x, y, 20, 20), false, dim);
+            DrawTextureRect(_arena, new Rect2(0, 0, GameRoot.ViewportWidth, GameRoot.ViewportHeight), false);
         }
+
+        DrawBulbs();
     }
 
-    private void FillRegion(int x, int y, int width, int height, int tileId)
+    /// <summary>
+    /// Marquee bulbs along the stage shelf, chasing in sequence. The backdrop is
+    /// otherwise completely still, and one moving thing keeps it from feeling dead.
+    /// </summary>
+    private void DrawBulbs()
     {
-        var src = new Rect2(tileId % 4 * Tile, tileId / 4 * Tile, Tile, Tile);
+        const int count = 9;
+        var phase = (int)(_time * 6f);
 
-        for (var ty = y; ty < y + height; ty += Tile)
+        for (var i = 0; i < count; i++)
         {
-            for (var tx = x; tx < x + width; tx += Tile)
-            {
-                DrawTextureRectRegion(_tileset, new Rect2(tx, ty, Tile, Tile), src);
-            }
+            var x = 6 + i * 20;
+            var lit = (i + phase) % 3 == 0;
+
+            DrawRect(new Rect2(x - 1, 112, 5, 5), Ink);
+            DrawRect(new Rect2(x, 113, 3, 3), lit ? BulbOn : BulbOff);
         }
     }
 }

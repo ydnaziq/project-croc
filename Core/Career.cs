@@ -27,19 +27,23 @@ public static class Career
     {
         new OpponentDef("penguin", "PIP", "penguin",
             SecondsPerBite: 1.50f, BiteJitter: 0.25f, PointsPerBite: 40,
-            PrizeMoney: 25, Taunt: "you look hungry, pal"),
+            PrizeMoney: 25, Taunt: "you look hungry, pal",
+            LineLosing: "hey! slow down!", LineWinning: "too easy", LinePanic: "what IS this"),
 
         new OpponentDef("cat", "MOCHI", "cat",
             SecondsPerBite: 1.30f, BiteJitter: 0.22f, PointsPerBite: 45,
-            PrizeMoney: 50, Taunt: "i eat, i nap, i win"),
+            PrizeMoney: 50, Taunt: "i eat, i nap, i win",
+            LineLosing: "unacceptable", LineWinning: "yawn", LinePanic: "hiss!!"),
 
         new OpponentDef("robot", "UNIT-7", "robot",
             SecondsPerBite: 1.10f, BiteJitter: 0.15f, PointsPerBite: 50,
-            PrizeMoney: 100, Taunt: "consumption rate: optimal"),
+            PrizeMoney: 100, Taunt: "consumption rate: optimal",
+            LineLosing: "recalculating", LineWinning: "as projected", LinePanic: "ERROR ERROR"),
 
         new OpponentDef("slime", "BLORP", "slime",
             SecondsPerBite: 0.95f, BiteJitter: 0.20f, PointsPerBite: 55,
-            PrizeMoney: 200, Taunt: "i am mostly stomach"),
+            PrizeMoney: 200, Taunt: "i am mostly stomach",
+            LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE"),
     };
 
     private static readonly float[] Durations = { 30f, 32f, 35f, 38f };

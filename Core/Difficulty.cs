@@ -18,9 +18,12 @@ public readonly record struct Difficulty(
     {
         var e = MathF.Max(0f, eaten);
 
-        var speed = Lerp(40f, 220f, e / 60f);
-        var spacingMin = Lerp(1.10f, 0.35f, e / 60f);
-        var jitter = Lerp(0.10f, 0.35f, e / 40f);
+        // Belt runs faster than the first pass, and the gap between items varies a
+        // lot more. A near-constant gap lets the player fall into a metronome and stop
+        // reacting - the timing has to be read off the food, not off a rhythm.
+        var speed = Lerp(55f, 260f, e / 60f);
+        var spacingMin = Lerp(0.95f, 0.30f, e / 60f);
+        var jitter = Lerp(0.35f, 0.85f, e / 40f);
 
         return new Difficulty(
             BeltSpeed: speed,

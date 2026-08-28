@@ -13,7 +13,10 @@ public sealed record OpponentDef(
     float BiteJitter,
     int PointsPerBite,
     int PrizeMoney,
-    string Taunt);
+    string Taunt,
+    string LineLosing = "",
+    string LineWinning = "",
+    string LinePanic = "");
 
 /// <summary>Accrues an opponent's score over the length of a match.</summary>
 public sealed class OpponentEater

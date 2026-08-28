@@ -66,6 +66,14 @@ public partial class GameRoot : Node2D
 
     private readonly RandomNumberGenerator _shakeRng = new();
 
+    // Rival reactions. A bark needs breathing room or the rival becomes wallpaper,
+    // so ordinary reactions share a cooldown; a panic is allowed to cut in.
+    private const float BarkCooldown = 3.2f;
+    private float _barkCooldown;
+    private bool _playerWasAhead;
+    private int _lastBarkCombo;
+    private bool _clutchBarked;
+
     public override void _Ready()
     {
         _saveStore = new GodotSaveStore();
@@ -173,7 +181,14 @@ public partial class GameRoot : Node2D
         _phase = Phase.Intro;
         _introTimer = IntroSeconds;
 
-        _overlay.Show(next.Opponent.Name, $"\"{next.Opponent.Taunt}\"");
+        _barkCooldown = 0f;
+        _playerWasAhead = false;
+        _lastBarkCombo = 0;
+        _clutchBarked = false;
+
+        var round = Career.Progress(_save) + 1;
+        _overlay.Show($"ROUND {round}", $"{next.Opponent.Name}\nof {Career.Ladder.Count} challengers", Ui.Gold);
+        _rival.Gloat(next.Opponent.Taunt);
         _sfx.Play(Sfx.Blip);
     }
 
@@ -199,7 +214,8 @@ public partial class GameRoot : Node2D
             if (ended.Prize > 0) _sfx.Play(Sfx.Coin);
 
             _overlay.Show("WINNER",
-                $"{ended.PlayerScore} to {ended.OpponentScore}\n+${ended.Prize}   best combo x{ended.BestCombo}");
+                $"{ended.PlayerScore} to {ended.OpponentScore}\n+${ended.Prize}  best x{ended.BestCombo}",
+                Ui.Green);
         }
         else
         {
@@ -211,7 +227,7 @@ public partial class GameRoot : Node2D
                 ? "three strikes\npress to try again"
                 : $"{ended.PlayerScore} to {ended.OpponentScore}\npress to try again";
 
-            _overlay.Show(headline, detail);
+            _overlay.Show(headline, detail, Ui.Red);
         }
 
         _saveStore.Save(_save);
@@ -333,6 +349,8 @@ public partial class GameRoot : Node2D
         _belt.Sync(_match.Items);
         _belt.PruneMissing(_match.Items);
         _hud.Update(_match.State, _match.OpponentScore, frenzy, _save.Money);
+
+        UpdateRivalReactions(dt);
     }
 
     private void DecayEffects(float dt)
@@ -384,6 +402,8 @@ public partial class GameRoot : Node2D
                     _sfx.Play(Sfx.Frenzy);
                     _shake = 3f;
                     _overlay.Flash("FRENZY!");
+                    _rival.Panic(RivalLine(r => r.LinePanic));
+                    _barkCooldown = BarkCooldown;
                     break;
                 case StrikeAdded:
                     OnStrike();
@@ -412,6 +432,55 @@ public partial class GameRoot : Node2D
         AddChild(ComboPopup.Create(new Vector2(JawCenterX, BeltY - 22f),
                                    chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy));
     }
+
+    /// <summary>
+    /// Watches the shape of the match and lets the rival react to it. Reacting to the
+    /// lead changing, to a long combo, and to the closing seconds is what turns a
+    /// climbing number into an opponent.
+    /// </summary>
+    private void UpdateRivalReactions(float dt)
+    {
+        if (_match is null) return;
+
+        _barkCooldown = Mathf.Max(0f, _barkCooldown - dt);
+
+        var state = _match.State;
+        var ahead = state.Score > _match.OpponentScore;
+
+        if (_barkCooldown <= 0f)
+        {
+            if (ahead && !_playerWasAhead)
+            {
+                _rival.Rattle(RivalLine(r => r.LineLosing));
+                _barkCooldown = BarkCooldown;
+            }
+            else if (!ahead && _playerWasAhead)
+            {
+                _rival.Gloat(RivalLine(r => r.LineWinning));
+                _barkCooldown = BarkCooldown;
+            }
+            else if (state.Combo >= 12 && state.Combo >= _lastBarkCombo + 6)
+            {
+                _lastBarkCombo = state.Combo;
+                _rival.Rattle(RivalLine(r => r.LineLosing));
+                _barkCooldown = BarkCooldown;
+            }
+        }
+
+        // The closing seconds, with the match already lost for them.
+        if (!_clutchBarked && state.TimeRemaining <= 8f
+            && state.Score > _match.OpponentScore * 1.25f)
+        {
+            _clutchBarked = true;
+            _rival.Panic(RivalLine(r => r.LinePanic));
+            _barkCooldown = BarkCooldown;
+        }
+
+        _playerWasAhead = ahead;
+    }
+
+    private string RivalLine(Func<OpponentDef, string> pick) =>
+        _match is null ? "" : pick(_match.Def.Opponent);
 
     private void OnStrike()
     {

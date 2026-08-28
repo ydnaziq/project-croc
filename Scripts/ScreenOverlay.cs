@@ -3,15 +3,23 @@ using Godot;
 namespace CrocGame;
 
 /// <summary>
-/// Title, taunt, and result text, plus the transient banner used for FRENZY.
-/// No buttons: a press anywhere advances, which is the same verb the game runs on.
+/// Title, round cards, and results, presented on a framed panel rather than a dim
+/// wash. Also owns the transient banner used for FRENZY.
+///
+/// Everything here is built from Ui.Panel so the interface carries the same 1px black
+/// edge as the sprites do.
 /// </summary>
 public partial class ScreenOverlay : Node2D
 {
+    private const float CardY = 120f;
+    private const float CardHeight = 92f;
+
     private Label _title = null!;
     private Label _subtitle = null!;
     private Label _banner = null!;
     private float _bannerAge;
+    private float _cardAge;
+    private Color _accent = Ui.Paper;
 
     public override void _Ready()
     {
@@ -19,39 +27,46 @@ public partial class ScreenOverlay : Node2D
 
         _title = new Label
         {
-            Position = new Vector2(0, 130),
-            Size = new Vector2(GameRoot.ViewportWidth, 24),
+            Position = new Vector2(0, CardY + 14),
+            Size = new Vector2(GameRoot.ViewportWidth, 28),
             HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 20, FontColor = new Color("f8f8f8") },
+            LabelSettings = Ui.Text(Ui.Title, Ui.Paper),
         };
         AddChild(_title);
 
         _subtitle = new Label
         {
-            Position = new Vector2(0, 162),
-            Size = new Vector2(GameRoot.ViewportWidth, 46),
+            Position = new Vector2(0, CardY + 50),
+            Size = new Vector2(GameRoot.ViewportWidth, 40),
             HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 9, FontColor = new Color("c8c8d8") },
+            LabelSettings = Ui.Text(Ui.Small, new Color("c8c8d8")),
         };
         AddChild(_subtitle);
 
         _banner = new Label
         {
-            Position = new Vector2(0, 100),
-            Size = new Vector2(GameRoot.ViewportWidth, 24),
+            Position = new Vector2(0, 96),
+            Size = new Vector2(GameRoot.ViewportWidth, 30),
             HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 18, FontColor = new Color("f8d878") },
+            LabelSettings = Ui.Text(Ui.Title, Ui.Gold),
             Visible = false,
         };
         AddChild(_banner);
     }
 
-    public void Show(string title, string subtitle)
+    public void Show(string title, string subtitle) => Show(title, subtitle, Ui.Paper);
+
+    /// <summary>The accent colours the card's edge, so a win and a loss are told apart
+    /// before a single word is read.</summary>
+    public void Show(string title, string subtitle, Color accent)
     {
         _title.Text = title;
         _subtitle.Text = subtitle;
+        _accent = accent;
+        _title.LabelSettings.FontColor = accent;
         _title.Visible = true;
         _subtitle.Visible = true;
+        _cardAge = 0f;
         QueueRedraw();
     }
 
@@ -72,9 +87,17 @@ public partial class ScreenOverlay : Node2D
 
     public override void _Process(double delta)
     {
+        var dt = (float)delta;
+
+        if (_title.Visible && _cardAge < 1f)
+        {
+            _cardAge = Mathf.Min(1f, _cardAge + dt * 6f);
+            QueueRedraw();
+        }
+
         if (!_banner.Visible) return;
 
-        _bannerAge += (float)delta;
+        _bannerAge += dt;
 
         if (_bannerAge >= 1.1f)
         {
@@ -84,8 +107,7 @@ public partial class ScreenOverlay : Node2D
 
         var pop = _bannerAge < 0.12f ? _bannerAge / 0.12f : 1f;
         _banner.Scale = Vector2.One * (0.6f + 0.4f * pop);
-        _banner.Position = new Vector2(
-            -GameRoot.ViewportWidth * (_banner.Scale.X - 1f) / 2f, 100);
+        _banner.Position = new Vector2(-GameRoot.ViewportWidth * (_banner.Scale.X - 1f) / 2f, 96);
         _banner.Modulate = Colors.White with { A = _bannerAge > 0.8f ? 1f - (_bannerAge - 0.8f) / 0.3f : 1f };
     }
 
@@ -93,7 +115,18 @@ public partial class ScreenOverlay : Node2D
     {
         if (!_title.Visible) return;
 
-        // A dim band behind the text so it stays readable over the arena.
-        DrawRect(new Rect2(0, 120, GameRoot.ViewportWidth, 96), new Color("101018", 0.82f));
+        // The card wipes open vertically, which reads as a card being dealt rather
+        // than a menu appearing.
+        var height = CardHeight * Mathf.Min(1f, _cardAge);
+        var y = CardY + (CardHeight - height) / 2f;
+        var rect = new Rect2(8, y, GameRoot.ViewportWidth - 16, height);
+
+        Ui.Panel(this, rect, new Color("101020", 0.95f));
+
+        if (height < CardHeight) return;
+
+        // Accent rails top and bottom, one pixel thick like everything else.
+        DrawRect(new Rect2(rect.Position.X + 1, rect.Position.Y + 1, rect.Size.X - 2, 1), _accent);
+        DrawRect(new Rect2(rect.Position.X + 1, rect.End.Y - 2, rect.Size.X - 2, 1), _accent);
     }
 }
