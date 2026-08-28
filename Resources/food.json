@@ -3,5 +3,8 @@
   { "id": "pizza",  "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
   { "id": "burger", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
   { "id": "donut",  "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 },
-  { "id": "pie",    "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 }
+  { "id": "pie",    "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 },
+
+  { "id": "bomb",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 25 },
+  { "id": "boot",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 40 }
 ]

@@ -57,6 +57,26 @@ Per character the exports are:
 The eating animation deliberately contains no food — the character just opens up
 and chews, so you can draw whatever it is eating separately.
 
+## Food and hazards — `ExportedSprites/*.png`
+
+16x16, same treatment as the cast. The five edible props come from
+`Tools/food_gen.py`; the two hazards come from `Tools/inedible_gen.py`.
+
+| Sprite | Edible | Notes |
+|--------|--------|-------|
+| hotdog, pizza, burger | yes | available from the first item |
+| donut, pie | yes | worth more, appear after 5 eaten |
+| bomb | no | appears after 25 eaten; chomping it costs a strike |
+| boot | no | appears after 40 eaten |
+
+Which items exist is `Resources/food.json`; how often they appear is
+`Core/Difficulty.cs`. Adding a food is one JSON row plus one PNG.
+
+## Audio — `Audio/*.ogg`
+
+Six generated sound effects. See `Audio/README.md` for the prompts and the
+regeneration steps.
+
 ## Tileset — `tileset.png`
 
 64x80, 20 tiles of 16x16 in a 4-wide grid. Tile ids are row-major from 0:

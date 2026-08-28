@@ -12,8 +12,8 @@ public partial class ScreenOverlay : Node2D
     {
         _title = new Label
         {
-            Position = new Vector2(0, 60),
-            Size = new Vector2(320, 20),
+            Position = new Vector2(0, 120),
+            Size = new Vector2(GameRoot.ViewportWidth, 20),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = new LabelSettings { FontSize = 16 },
         };
@@ -21,8 +21,8 @@ public partial class ScreenOverlay : Node2D
 
         _subtitle = new Label
         {
-            Position = new Vector2(0, 90),
-            Size = new Vector2(320, 20),
+            Position = new Vector2(0, 200),
+            Size = new Vector2(GameRoot.ViewportWidth, 40),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = new LabelSettings { FontSize = 10 },
         };

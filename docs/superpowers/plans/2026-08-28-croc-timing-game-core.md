@@ -2796,17 +2796,30 @@ git commit -m "feat: title, game over, restart, and persisted best score"
 - The game is playable end to end: title, run, three strikes, game over, retry.
 - A best score survives a relaunch.
 
-## Out of scope for this plan
+## Phase two — delivered
 
-These are the second plan, written after you have played the first one — the tuning
-numbers in Task 5 should change based on how it actually feels before any of this is
-built on top:
+Built directly rather than as a separate plan, at the user's direction, along with a
+switch to a 9:16 portrait viewport (180x320) with the croc centred:
 
-- The feel pass: hit-stop, screen shake, flash, combo popups, particles.
-- Audio: SFX generation through the Artificial Studio MCP server, and playback.
-- Inedible items: sprites, `food.json` rows, and the strike-on-chomp path (Core
-  already implements the rule; only content is missing).
-- Milestone unlocks: the catalog, croc skins, backdrops, and the unlock UI. The
-  `MilestoneReached` event named in section 4 of the spec ships with that catalog —
-  it is deliberately absent from `Core/GameEvent.cs` in this plan, because an event
-  with no unlock table behind it has nothing to announce.
+- **Conveyor**: `Scripts/ConveyorView.cs` draws the belt and scrolls its treads at the
+  speed Core is already using, so the surface visibly carries the food.
+- **Feel pass**: hit-stop, screen shake, damage flash, combo popups, and a crumb
+  particle burst, all in `Scripts/GameRoot.cs` and `Scripts/ComboPopup.cs`.
+- **Audio**: six effects generated through the Artificial Studio MCP server and
+  committed to `Art/Audio/`, played by `Scripts/Sfx.cs`. Prompts recorded in
+  `Art/Audio/README.md`.
+- **Inedibles**: `bomb` and `boot` from `Art/Tools/inedible_gen.py`, added to
+  `Resources/food.json`. Core already implemented the rule.
+- **Unlocks**: `Core/UnlockCatalog.cs` with tests, four cosmetic croc skins applied as
+  tints on the existing sprite.
+
+One deliberate departure from the spec: unlocks are evaluated in `UnlockCatalog`
+rather than emitted as a `MilestoneReached` event from `GameSession`. Milestones
+depend on lifetime totals held in the save file, and giving `GameSession` a
+save-file dependency to fire one event would cost more than the event is worth.
+
+## Still out of scope
+
+- Tuning. Every number in `Core/Difficulty.cs` is still a guess.
+- A skin picker: the croc automatically wears the most recently earned skin.
+- Backdrops, settings, pause, and accessibility assists.

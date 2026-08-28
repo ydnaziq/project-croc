@@ -12,25 +12,19 @@ config_version=5
 
 config/name="CrocGame"
 run/main_scene="res://Scenes/Main.tscn"
-config/features=PackedStringArray("4.7", "Mobile")
+config/features=PackedStringArray("4.7", "C#", "Mobile")
 config/icon="res://icon.svg"
 
 [display]
 
-window/size/viewport_width=320
-window/size/viewport_height=180
+window/size/viewport_width=180
+window/size/viewport_height=320
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
 [dotnet]
 
 project/assembly_name="CrocGame"
-
-[rendering]
-
-rendering_device/driver.windows="d3d12"
-renderer/rendering_method="mobile"
-textures/canvas_textures/default_texture_filter=0
 
 [input]
 
@@ -41,3 +35,9 @@ chomp={
 , Object(InputEventScreenTouch,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"index":0,"position":Vector2(0, 0),"canceled":false,"pressed":false,"double_tap":false,"script":null)
 ]
 }
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
