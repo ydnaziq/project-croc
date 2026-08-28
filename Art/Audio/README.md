@@ -1,25 +1,37 @@
 # Audio
 
-Six sound effects, generated once through the Artificial Studio MCP server
-(`sound-effects` tool, model `elevenlabs-sound-effects`, 1 credit per second) and
-committed as artifacts. Nothing is generated at build time or at runtime.
+Ten chiptune sound effects, synthesised by `../Tools/sfx_gen.py` and committed as Ogg.
 
-Each was trimmed of leading and trailing silence and loudness-normalised to
-`I=-16 TP=-1.5 LRA=11` with ffmpeg, then encoded to Ogg Vorbis for Godot.
+## Why these are synthesised rather than AI-generated
 
-| File | Played when | Prompt |
+The first pass used the Artificial Studio `sound-effects` tool. The results were
+technically fine and wrong for this game: realistic recorded-sounding audio against
+NES pixel art reads as two different products, and every cue ran about a second, which
+turns to mud in a game that fires its core sound several times a second.
+
+These are built from the vocabulary a NES actually had - pulse waves with variable
+duty, a 15-bit LFSR noise channel, and a triangle channel - so they sit *with* the art
+instead of beside it. They are also short, deterministic, and free to regenerate.
+
+Everything is normalised to 0.32 peak rather than full scale. These sounds stack, and
+stacked square waves get painful fast.
+
+| File | ms | Played when |
 |---|---|---|
-| `chomp.ogg` | a chomp lands on edible food | short crisp retro 8-bit video game chomp, single quick bite crunch blip, chiptune, dry, no reverb |
-| `whiff.ogg` | a chomp closes on empty air | short retro 8-bit whiff miss sound, jaws snapping on empty air, quick descending chiptune blip, dry |
-| `pass.ogg` | edible food rides past unchomped | short dull soft retro 8-bit thud, low muted blip, something slipping past, dry chiptune |
-| `strike.ogg` | a strike is added | short harsh retro 8-bit arcade error buzz, descending two tone penalty sting, chiptune, dry |
-| `gameover.ogg` | the third strike ends the run | retro 8-bit arcade game over jingle, short sad descending chiptune melody, dry, no reverb |
-| `blip.ogg` | title or game-over screen advances | very short bright retro 8-bit menu select blip, ascending chirp, chiptune, dry |
-
-All six used `prompt_influence: 0.7`; durations were `1s` except `gameover.ogg` at `2s`.
+| `chomp.ogg` | 62 | a chomp lands on food |
+| `crunch.ogg` | 77 | a chomp lands during a combo or frenzy |
+| `whiff.ogg` | 90 | a chomp closes on empty air |
+| `pass.ogg` | 90 | food rides past unchomped |
+| `strike.ogg` | 230 | a strike is added |
+| `coin.ogg` | 185 | prize money is awarded |
+| `blip.ogg` | 35 | menu or screen advance |
+| `frenzy.ogg` | 250 | frenzy mode starts |
+| `win.ogg` | 565 | the croc wins a match |
+| `lose.ogg` | 720 | the croc loses a match |
 
 ## Regenerating
 
-Re-run the same prompts through the `sound-effects` tool and repeat the ffmpeg step:
+    python3 Art/Tools/sfx_gen.py /tmp/sfx
+    for f in /tmp/sfx/*.wav; do ffmpeg -y -i "$f" -c:a libvorbis -q:a 5 "Art/Audio/$(basename $f .wav).ogg"; done
 
-    ffmpeg -i in.mp3 -af "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.01,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse,loudnorm=I=-16:TP=-1.5:LRA=11" -c:a libvorbis -q:a 4 -ar 44100 out.ogg
+Edit the synth functions in `sfx_gen.py` to change how anything sounds.

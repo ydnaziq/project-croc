@@ -19,6 +19,10 @@ public partial class ConveyorView : Node2D
     private static readonly Color RimColor = new("6a6a82");
 
     private float _scroll;
+    private float _frenzy;
+
+    /// <summary>0..1. Tints the belt hot while the frenzy runs.</summary>
+    public void SetFrenzy(float amount) => _frenzy = amount;
 
     /// <summary>Advance the treads by the same speed the items are moving.</summary>
     public void Advance(float beltSpeed, float dt)
@@ -31,8 +35,9 @@ public partial class ConveyorView : Node2D
     {
         var width = GameRoot.ViewportWidth;
 
-        DrawRect(new Rect2(0, BandTop, width, BandHeight), BandColor);
-        DrawRect(new Rect2(0, BandTop, width, 3f), SurfaceColor);
+        var heat = new Color("f83800");
+        DrawRect(new Rect2(0, BandTop, width, BandHeight), BandColor.Lerp(heat, _frenzy * 0.5f));
+        DrawRect(new Rect2(0, BandTop, width, 3f), SurfaceColor.Lerp(new Color("f8d878"), _frenzy));
         DrawLine(new Vector2(0, BandTop), new Vector2(width, BandTop), RimColor);
 
         // Treads scroll with the belt. Start one spacing off-screen left so a tread

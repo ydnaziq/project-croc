@@ -25,6 +25,11 @@ public partial class CrocView : AnimatedSprite2D
         AddAnimation(frames, sheet, "eat", first: 12, count: 6, fps: 18f, loop: false);
 
         SpriteFrames = frames;
+
+        // The croc is the star of the screen and was far too small at 1:1 on a
+        // 180px-wide canvas. Integer scale keeps every pixel square.
+        Scale = new Vector2(2, 2);
+
         AnimationFinished += () => Play("idle");
         Play("idle");
     }
@@ -50,4 +55,14 @@ public partial class CrocView : AnimatedSprite2D
     public void PlayEat() => Play("eat");
 
     public void PlayCelebrate() => Play("celebrate");
+
+    /// <summary>
+    /// Frenzy glow. Godot has no cheap per-sprite outline, so the croc is brightened
+    /// on a pulse instead - readable at this scale and costs nothing.
+    /// </summary>
+    public void SetGlow(float amount, Color skinTint)
+    {
+        var glow = 1f + 0.9f * amount;
+        Modulate = new Color(skinTint.R * glow, skinTint.G * glow, skinTint.B * glow, skinTint.A);
+    }
 }

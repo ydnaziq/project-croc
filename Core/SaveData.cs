@@ -3,18 +3,27 @@ using System.Text.Json;
 
 namespace CrocGame.Core;
 
-/// <summary>What survives between runs. Cosmetic unlocks only: nothing here changes
-/// difficulty, scoring, or the timing window.</summary>
+/// <summary>
+/// What survives between matches. Money and cosmetics only: nothing here changes
+/// difficulty, scoring, or the timing window, so a win is always a win on skill.
+/// </summary>
 public sealed class SaveData
 {
+    public int Money { get; set; }
     public int BestScore { get; set; }
     public int LifetimeEaten { get; set; }
-    public List<string> UnlockedIds { get; set; } = new();
+
+    /// <summary>Opponent ids the croc has beaten, in the order they were beaten.</summary>
+    public List<string> DefeatedIds { get; set; } = new();
+
+    public List<string> OwnedSkinIds { get; set; } = new();
+
+    public string EquippedSkinId { get; set; } = "";
 
     public string ToJson() => JsonSerializer.Serialize(this);
 
     /// <summary>
-    /// Never throws. A corrupt or missing save costs the player their high score;
+    /// Never throws. A corrupt or missing save costs the player their progress;
     /// crashing on launch costs them the game.
     /// </summary>
     public static SaveData FromJson(string? json)

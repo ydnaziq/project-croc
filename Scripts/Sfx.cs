@@ -10,13 +10,18 @@ namespace CrocGame;
 public partial class Sfx : Node
 {
     public const string Chomp = "chomp";
+    public const string Crunch = "crunch";
     public const string Whiff = "whiff";
     public const string Pass = "pass";
     public const string Strike = "strike";
-    public const string GameOver = "gameover";
+    public const string Coin = "coin";
     public const string Blip = "blip";
+    public const string Frenzy = "frenzy";
+    public const string Win = "win";
+    public const string Lose = "lose";
 
-    private static readonly string[] Names = { Chomp, Whiff, Pass, Strike, GameOver, Blip };
+    private static readonly string[] Names =
+        { Chomp, Crunch, Whiff, Pass, Strike, Coin, Blip, Frenzy, Win, Lose };
 
     private readonly Dictionary<string, AudioStreamPlayer> _players = new();
 

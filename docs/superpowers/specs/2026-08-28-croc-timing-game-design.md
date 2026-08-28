@@ -1,7 +1,9 @@
 # Croc Timing Game — Design
 
 Date: 2026-08-28
-Status: approved design, pending implementation plan
+Status: **superseded in part.** The timing mechanic below still stands exactly as
+written. The structure around it does not: the game is now a 1v1 eating-contest
+career, not an endless run. See "Revision: the contest" at the end of this document.
 
 ## 1. What this is
 
@@ -329,3 +331,62 @@ build-configuration questions, not design risks:
   `~/.claude/skills/herdr/SKILL.md`. Worth doing as its own workflow task; this game's
   work does not parallelize enough to depend on it.
 - Alternate modes and rulesets, settings menu, pause, accessibility assists.
+
+
+---
+
+# Revision: the contest
+
+The premise, from the author: *a homeless crocodile is starving, enters an eating
+contest, and faces contestants 1v1 until he is champion.*
+
+That replaces endless escalation. What survives unchanged is everything about the
+press itself - the jaw zone, position-authoritative judging, the movement strategies,
+the belt, the spawn director, the difficulty curve. What changed is the frame around
+it.
+
+## What the structure is now
+
+A career ladder of four rivals drawn from the existing cast: PIP the penguin, MOCHI
+the cat, UNIT-7 the robot, BLORP the slime. Each bout is a timed match, 30 to 38
+seconds. Both eat; the higher score at the bell wins. Three strikes disqualifies
+regardless of score. Winning pays prize money, which is spent in a shop between bouts.
+
+The rival is not simulated on a belt of their own. They consume at a rate with jitter,
+because the player never sees their timing - only their score climbing. Modelling more
+than that would be work no one can observe.
+
+## Frenzy
+
+A combo of eight tips the match into a frenzy: six seconds of double score and a belt
+40% faster, refreshed by continued eating and killed instantly by a strike. This is
+the peak the previous design lacked. A pure escalation curve has no shape - it only
+gets harder - whereas frenzy makes good play compound, and losing it hurt.
+
+## Money and cosmetics
+
+Prizes run 25 / 50 / 100 / 200. The shop sells four croc skins at 30 / 80 / 150 / 250,
+so the ladder does not quite fund everything in one pass. Skins are tints on the
+existing sprite: no new art, no balance risk, and the choice is real because you cannot
+have them all at once.
+
+## What this replaced, and why the earlier version failed
+
+The first build was assessed as: incoherent art, cheesy particles, an empty
+background, ear-hurting audio, and a loop too predictable to be fun. The causes and
+the fixes:
+
+- **Empty background** - nothing on screen except the sprites came from the tileset.
+  The arena is now built from `tileset.png` tiles, with the rest of the cast drawn
+  dimmed as spectators.
+- **Croc too small** - it rendered 32px tall on a 180px-wide canvas. It is now drawn at
+  2x integer scale.
+- **Cheesy particles** - Godot's default particles are soft round dots, which read as a
+  different medium sitting on pixel art. Replaced with hard-edged square chunks snapped
+  to the pixel grid, coloured from the food palette.
+- **Painful audio** - AI-generated realistic sound against NES art is a mismatch, and
+  every cue ran about a second, which turns to mud when the core sound fires several
+  times a second. Replaced with synthesised chiptune from `Art/Tools/sfx_gen.py`: pulse,
+  noise, and triangle channels, 35-720ms, peak-limited to 0.32.
+- **Predictable loop** - no opponent, no clock, no peaks. Now: a rival whose score you
+  watch climbing, a bell, frenzy, and a shop.

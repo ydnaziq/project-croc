@@ -15,87 +15,89 @@ public partial class GameRoot : Node2D
     public const float JawCenterX = ViewportWidth / 2f;
     public const float JawHalfWidth = 12f;
 
-    /// <summary>Items spawn and retire off-screen so nothing pops in or out in view.</summary>
     public const float SpawnX = -20f;
     public const float RetireX = ViewportWidth + 12f;
 
     /// <summary>The line food travels along - level with the croc's mouth.</summary>
-    public const float BeltY = 160f;
+    public const float BeltY = 232f;
+
+    /// <summary>The rival's stage, high on the screen.</summary>
+    public const float RivalY = 70f;
 
     /// <summary>
-    /// The croc sprite is a standing body 32px tall whose mouth sits about 3px above
-    /// the sprite centre, so the sprite is offset down to put the mouth on the belt.
+    /// The croc's mouth sits about 3px above the sprite centre; at 2x scale that is 6.
     /// </summary>
-    public const float CrocMouthOffsetY = 3f;
+    public const float CrocMouthOffsetY = 6f;
 
-    // Feel. Timing games live or die on feedback, so these are core, not polish.
-    private const float HitStopSeconds = 0.06f;
-    private const float StrikeShake = 4f;
-    private const float ShakeDecay = 14f;
+    private const float HitStopSeconds = 0.055f;
+    private const float StrikeShake = 5f;
+    private const float ChompShake = 1.4f;
+    private const float ShakeDecay = 16f;
     private const float FlashDecay = 4.5f;
+    private const float IntroSeconds = 1.8f;
 
-    private enum Phase { Title, Running, GameOver }
+    private enum Phase { Title, Intro, Fighting, Result, Shop }
 
-    private GameSession _session = null!;
     private ISaveStore _saveStore = null!;
     private FoodTable _foodTable = null!;
+    private SaveData _save = new();
+    private MatchSession? _match;
 
     private Node2D _world = null!;
-    private ConveyorView _conveyorView = null!;
-    private BeltView _beltView = null!;
-    private CrocView _crocView = null!;
-    private CpuParticles2D _crumbs = null!;
+    private Backdrop _backdrop = null!;
+    private ConveyorView _conveyor = null!;
+    private BeltView _belt = null!;
+    private CrocView _croc = null!;
+    private RivalView _rival = null!;
+    private Crumbs _crumbs = null!;
+    private FrenzyOverlay _frenzy = null!;
     private ColorRect _flash = null!;
-    private Hud _hud = null!;
+    private MatchHud _hud = null!;
     private ScreenOverlay _overlay = null!;
+    private ShopScreen _shop = null!;
     private Sfx _sfx = null!;
 
     private Phase _phase = Phase.Title;
     private bool _chompQueued;
-
     private float _hitStop;
     private float _shake;
     private float _flashAlpha;
+    private float _introTimer;
 
     private readonly RandomNumberGenerator _shakeRng = new();
-
-    /// <summary>
-    /// Cosmetic skins are a tint on the existing croc sprite rather than new art, so
-    /// unlocking one costs nothing to produce. Later entries win when several are
-    /// unlocked, matching the order they are earned in UnlockCatalog.All.
-    /// </summary>
-    private static readonly Dictionary<string, Color> CrocSkins = new()
-    {
-        ["croc_gold"] = new Color("f8d878"),
-        ["croc_blue"] = new Color("8898e8"),
-        ["croc_pink"] = new Color("f8a8d8"),
-        ["croc_ghost"] = new Color("ffffff", 0.65f),
-    };
 
     public override void _Ready()
     {
         _saveStore = new GodotSaveStore();
+        _save = _saveStore.Load();
         _foodTable = LoadFoodTable();
 
         _sfx = new Sfx();
         AddChild(_sfx);
 
-        // Everything inside _world shakes together; the HUD and overlay do not.
         _world = new Node2D();
         AddChild(_world);
 
-        _crocView = new CrocView { Position = new Vector2(JawCenterX, BeltY + CrocMouthOffsetY) };
-        _world.AddChild(_crocView);
+        _backdrop = new Backdrop();
+        _world.AddChild(_backdrop);
 
-        // The conveyor draws in front of the croc, so the croc stands behind the belt.
-        _conveyorView = new ConveyorView();
-        _world.AddChild(_conveyorView);
+        _rival = new RivalView { Position = new Vector2(JawCenterX, RivalY) };
+        _world.AddChild(_rival);
 
-        _beltView = new BeltView();
-        _world.AddChild(_beltView);
+        _croc = new CrocView { Position = new Vector2(JawCenterX, BeltY + CrocMouthOffsetY) };
+        _world.AddChild(_croc);
 
-        _crumbs = BuildCrumbs();
+        _conveyor = new ConveyorView();
+        _world.AddChild(_conveyor);
+
+        _belt = new BeltView();
+        _world.AddChild(_belt);
+
+        _crumbs = new Crumbs();
         _world.AddChild(_crumbs);
+
+        _frenzy = new FrenzyOverlay();
+        AddChild(_frenzy);
 
         _flash = new ColorRect
         {
@@ -103,40 +105,24 @@ public partial class GameRoot : Node2D
             Color = new Color("f83800"),
             MouseFilter = Control.MouseFilterEnum.Ignore,
             Modulate = Colors.White with { A = 0f },
+            ZIndex = 18,
         };
         AddChild(_flash);
 
-        _hud = new Hud();
+        _hud = new MatchHud { Visible = false };
         AddChild(_hud);
 
         _overlay = new ScreenOverlay();
         AddChild(_overlay);
 
-        var save = _saveStore.Load();
-        ApplySkin(save);
+        _shop = new ShopScreen();
+        _shop.BuyRequested += OnBuy;
+        _shop.ContinueRequested += StartNextMatch;
+        AddChild(_shop);
 
-        _overlay.Show("CROC", save.BestScore > 0
-            ? $"best {save.BestScore}\npress to start"
-            : "press to start");
+        ApplySkin();
+        ShowTitle();
     }
-
-    private static CpuParticles2D BuildCrumbs() => new()
-    {
-        Position = new Vector2(JawCenterX, BeltY),
-        Emitting = false,
-        OneShot = true,
-        Explosiveness = 1f,
-        Amount = 10,
-        Lifetime = 0.45,
-        Direction = new Vector2(0, -1),
-        Spread = 55f,
-        InitialVelocityMin = 30f,
-        InitialVelocityMax = 70f,
-        Gravity = new Vector2(0, 220f),
-        ScaleAmountMin = 1f,
-        ScaleAmountMax = 2f,
-        Color = new Color("f8d878"),
-    };
 
     private static FoodTable LoadFoodTable()
     {
@@ -150,44 +136,179 @@ public partial class GameRoot : Node2D
         return FoodTable.FromJson(file.GetAsText());
     }
 
-    private void StartRun()
+    // ------------------------------------------------------------------ phases
+
+    private void ShowTitle()
     {
-        var seed = (int)(Time.GetTicksMsec() & 0x7FFFFFFF);
+        _phase = Phase.Title;
+        _hud.Visible = false;
 
-        _session = new GameSession(
-            _foodTable,
-            new SeededRandom(seed),
-            new JawZone(JawCenterX, JawHalfWidth),
-            SpawnX,
-            RetireX);
+        var line = Career.IsChampion(_save)
+            ? $"champion  ${_save.Money}\npress to eat again"
+            : Career.Progress(_save) > 0
+                ? $"{Career.Progress(_save)} of {Career.Ladder.Count} beaten\npress to continue"
+                : "a starving croc\nenters the contest";
 
-        _hud.Set(0, 0, 0);
+        _overlay.Show("CROC", line);
     }
+
+    /// <summary>The rival struts and taunts before the bell. A beat of anticipation.</summary>
+    private void StartIntro()
+    {
+        var next = Career.NextMatch(_save);
+        if (next is null)
+        {
+            _save.DefeatedIds.Clear();   // champion: the ladder loops for another run
+            next = Career.NextMatch(_save)!;
+        }
+
+        _match = new MatchSession(
+            _foodTable, new SeededRandom((int)(Time.GetTicksMsec() & 0x7FFFFFFF)),
+            new JawZone(JawCenterX, JawHalfWidth), SpawnX, RetireX, next);
+
+        _rival.Setup(next.Opponent);
+        _belt.Clear();
+        _crumbs.Visible = true;
+        _hud.Visible = true;
+        _phase = Phase.Intro;
+        _introTimer = IntroSeconds;
+
+        _overlay.Show(next.Opponent.Name, $"\"{next.Opponent.Taunt}\"");
+        _sfx.Play(Sfx.Blip);
+    }
+
+    private void StartNextMatch()
+    {
+        _shop.Close();
+        StartIntro();
+    }
+
+    private void EndMatch(MatchEnded ended)
+    {
+        _phase = Phase.Result;
+        _hitStop = 0f;
+        _frenzy.SetAmount(0f);
+        _conveyor.SetFrenzy(0f);
+        _belt.Clear();
+
+        if (ended.Result == MatchResult.Won)
+        {
+            Career.RecordWin(_save, ended);
+            _croc.PlayCelebrate();
+            _sfx.Play(Sfx.Win);
+            if (ended.Prize > 0) _sfx.Play(Sfx.Coin);
+
+            _overlay.Show("WINNER",
+                $"{ended.PlayerScore} to {ended.OpponentScore}\n+${ended.Prize}   best combo x{ended.BestCombo}");
+        }
+        else
+        {
+            Career.RecordLoss(_save, ended);
+            _sfx.Play(Sfx.Lose);
+
+            var headline = ended.Result == MatchResult.Disqualified ? "DISQUALIFIED" : "BEATEN";
+            var detail = ended.Result == MatchResult.Disqualified
+                ? "three strikes\npress to try again"
+                : $"{ended.PlayerScore} to {ended.OpponentScore}\npress to try again";
+
+            _overlay.Show(headline, detail);
+        }
+
+        _saveStore.Save(_save);
+        ApplySkin();
+    }
+
+    private void OpenShop()
+    {
+        _phase = Phase.Shop;
+        _hud.Visible = false;
+        _overlay.Hide();
+        _shop.Open(_save);
+    }
+
+    private void OnBuy(string itemId)
+    {
+        var owned = _save.OwnedSkinIds.Contains(itemId);
+        var result = owned ? PurchaseResult.AlreadyOwned : Career.Buy(_save, itemId);
+
+        if (result == PurchaseResult.Bought)
+        {
+            _sfx.Play(Sfx.Coin);
+        }
+        else if (owned)
+        {
+            Career.Equip(_save, itemId);   // already yours: tapping wears it
+            _sfx.Play(Sfx.Blip);
+        }
+        else
+        {
+            _sfx.Play(Sfx.Whiff);          // cannot afford it
+        }
+
+        _saveStore.Save(_save);
+        ApplySkin();
+        _shop.Refresh();
+    }
+
+    private void ApplySkin()
+    {
+        var skin = Career.EquippedSkin(_save);
+        _skinTint = skin is null ? Colors.White : new Color(skin.Tint);
+        _croc.SetGlow(0f, _skinTint);
+    }
+
+    private Color _skinTint = Colors.White;
+
+    // ------------------------------------------------------------------ loop
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        // Buffered rather than acted on immediately, so a press between frames is
-        // never dropped and is judged against the same tick the player saw.
+        if (_phase == Phase.Shop) return;   // the shop reads its own input
         if (@event.IsActionPressed("chomp")) _chompQueued = true;
     }
 
     public override void _Process(double delta)
     {
         var dt = (float)delta;
-
         DecayEffects(dt);
 
-        if (_phase != Phase.Running)
+        switch (_phase)
         {
-            if (!_chompQueued) return;
+            case Phase.Title:
+                if (TakeChomp()) { _sfx.Play(Sfx.Blip); _overlay.Hide(); StartIntro(); }
+                return;
 
-            _chompQueued = false;
-            _sfx.Play(Sfx.Blip);
-            _overlay.Hide();
-            StartRun();
-            _phase = Phase.Running;
-            return;
+            case Phase.Intro:
+                _introTimer -= dt;
+                if (_introTimer <= 0f || TakeChomp())
+                {
+                    _overlay.Hide();
+                    _phase = Phase.Fighting;
+                }
+                return;
+
+            case Phase.Result:
+                if (TakeChomp()) OpenShop();
+                return;
+
+            case Phase.Shop:
+                return;
         }
+
+        Fight(dt);
+    }
+
+    private bool TakeChomp()
+    {
+        if (!_chompQueued) return false;
+
+        _chompQueued = false;
+        return true;
+    }
+
+    private void Fight(float dt)
+    {
+        if (_match is null) return;
 
         // Hit-stop freezes the session rather than slowing it: because Core is
         // dt-driven, not calling Tick cannot consume part of a later timing window.
@@ -197,20 +318,21 @@ public partial class GameRoot : Node2D
             return;
         }
 
-        if (_chompQueued)
-        {
-            _chompQueued = false;
-            Render(_session.Chomp());
-        }
+        if (TakeChomp()) Render(_match.Chomp());
+        if (_phase != Phase.Fighting) return;
 
-        if (_phase != Phase.Running) return;
+        Render(_match.Tick(dt));
+        if (_phase != Phase.Fighting) return;
 
-        Render(_session.Tick(dt));
+        var frenzy = _match.Frenzy.Fraction;
+        _conveyor.Advance(_match.BeltSpeed, dt);
+        _conveyor.SetFrenzy(frenzy);
+        _frenzy.SetAmount(frenzy);
+        _croc.SetGlow(frenzy, _skinTint);
 
-        _conveyorView.Advance(Difficulty.ForEaten(_session.State.Eaten).BeltSpeed, dt);
-        _beltView.Sync(_session.Items);
-        _beltView.PruneMissing(_session.Items);
-        _hud.Set(_session.State.Score, _session.State.Combo, _session.State.Strikes);
+        _belt.Sync(_match.Items);
+        _belt.PruneMissing(_match.Items);
+        _hud.Update(_match.State, _match.OpponentScore, frenzy, _save.Money);
     }
 
     private void DecayEffects(float dt)
@@ -244,97 +366,59 @@ public partial class GameRoot : Node2D
                     OnEaten(chomped);
                     break;
                 case Chomped chomped:
-                    // An inedible in the jaws: the bite lands, the news is bad.
-                    _crocView.PlayEat();
-                    _beltView.Remove(chomped.Item.Id);
+                    _croc.PlayEat();
+                    _belt.Remove(chomped.Item.Id);
                     break;
                 case ChompedAir:
-                    _crocView.PlayEat();
+                    _croc.PlayEat();
                     _sfx.Play(Sfx.Whiff);
                     break;
                 case Passed passed:
-                    _beltView.Remove(passed.Item.Id);
+                    _belt.Remove(passed.Item.Id);
                     _sfx.Play(Sfx.Pass);
+                    break;
+                case OpponentAte ate:
+                    _rival.Ate(ate.OpponentScore);
+                    break;
+                case FrenzyStarted:
+                    _sfx.Play(Sfx.Frenzy);
+                    _shake = 3f;
+                    _overlay.Flash("FRENZY!");
                     break;
                 case StrikeAdded:
                     OnStrike();
                     break;
-                case RunEnded ended:
-                    EndRun(ended);
-                    break;
+                case MatchEnded ended:
+                    EndMatch(ended);
+                    return;
             }
         }
     }
 
     private void OnEaten(Chomped chomped)
     {
-        _crocView.PlayEat();
-        _beltView.Remove(chomped.Item.Id);
+        _croc.PlayEat();
+        _belt.Remove(chomped.Item.Id);
 
         _hitStop = HitStopSeconds;
-        _crumbs.Restart();
+        _shake = Math.Max(_shake, ChompShake + Math.Min(chomped.Combo, 6) * 0.25f);
+        _crumbs.Burst(new Vector2(JawCenterX, BeltY), chomped.DuringFrenzy ? 12 : 8,
+                      chomped.DuringFrenzy ? 1.3f : 1f);
 
-        // Pitch climbs with the combo so a streak audibly builds, capped so it never
-        // turns into a squeak.
-        _sfx.Play(Sfx.Chomp, 1f + 0.04f * Math.Min(chomped.Combo, 8));
+        _sfx.Play(chomped.Combo >= 4 || chomped.DuringFrenzy ? Sfx.Crunch : Sfx.Chomp,
+                  1f + 0.03f * Math.Min(chomped.Combo, 8));
 
-        AddChild(ComboPopup.Create(
-            new Vector2(JawCenterX, BeltY - 14f), chomped.ScoreAwarded, chomped.Combo));
+        _hud.PulseCombo();
+        AddChild(ComboPopup.Create(new Vector2(JawCenterX, BeltY - 22f),
+                                   chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy));
     }
 
     private void OnStrike()
     {
         _shake = StrikeShake;
-        _flashAlpha = 0.55f;
+        _flashAlpha = 0.5f;
         _sfx.Play(Sfx.Strike);
-    }
-
-    private void EndRun(RunEnded ended)
-    {
-        var data = _saveStore.Load();
-        var isBest = ended.FinalScore > data.BestScore;
-
-        data.BestScore = Math.Max(data.BestScore, ended.FinalScore);
-        data.LifetimeEaten += ended.Eaten;
-
-        var earned = UnlockCatalog.Apply(data);
-        _saveStore.Save(data);
-        ApplySkin(data);
-
-        if (isBest || earned.Count > 0) _crocView.PlayCelebrate();
-
-        _sfx.Play(Sfx.GameOver);
-        _beltView.Clear();
-        _hitStop = 0f;
-        _phase = Phase.GameOver;
-
-        _overlay.Show($"{ended.FinalScore}", Subtitle(data, isBest, earned));
-    }
-
-    private static string Subtitle(SaveData data, bool isBest, IReadOnlyList<Milestone> earned)
-    {
-        if (earned.Count > 0)
-        {
-            var names = string.Join(", ", earned.Select(m => m.Label));
-            return $"unlocked {names}!\npress to retry";
-        }
-
-        return isBest ? "new best!\npress to retry" : $"best {data.BestScore}\npress to retry";
-    }
-
-    /// <summary>Wears the most recently earned skin the save has unlocked.</summary>
-    private void ApplySkin(SaveData data)
-    {
-        var tint = Colors.White;
-
-        foreach (var milestone in UnlockCatalog.All)
-        {
-            if (data.UnlockedIds.Contains(milestone.Id) && CrocSkins.TryGetValue(milestone.Id, out var color))
-            {
-                tint = color;
-            }
-        }
-
-        _crocView.Modulate = tint;
+        _frenzy.SetAmount(0f);
+        _conveyor.SetFrenzy(0f);
     }
 }
