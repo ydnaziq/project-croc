@@ -1,10 +1,11 @@
 [
-  { "id": "hotdog", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
-  { "id": "pizza",  "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
-  { "id": "burger", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0 },
-  { "id": "donut",  "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 },
-  { "id": "pie",    "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 5 },
+  { "id": "hotdog", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0,  "weight": 6 },
+  { "id": "pizza",  "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0,  "weight": 6 },
+  { "id": "burger", "width": 16, "edible": true,  "movement": "constant", "score": 10, "minEatenToAppear": 0,  "weight": 6 },
+  { "id": "donut",  "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 4,  "weight": 5 },
+  { "id": "pie",    "width": 16, "edible": true,  "movement": "constant", "score": 15, "minEatenToAppear": 4,  "weight": 5 },
+  { "id": "golden", "width": 12, "edible": true,  "movement": "bounce",   "score": 60, "minEatenToAppear": 10, "weight": 1 },
 
-  { "id": "bomb",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 25 },
-  { "id": "boot",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 40 }
+  { "id": "bomb",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 18, "weight": 3 },
+  { "id": "boot",   "width": 16, "edible": false, "movement": "stutter",  "score": 0,  "minEatenToAppear": 30, "weight": 2 }
 ]

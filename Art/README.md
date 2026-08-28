@@ -60,14 +60,17 @@ and chews, so you can draw whatever it is eating separately.
 ## Food and hazards — `ExportedSprites/*.png`
 
 16x16, same treatment as the cast. The five edible props come from
-`Tools/food_gen.py`; the two hazards come from `Tools/inedible_gen.py`.
+`Tools/food_gen.py`; the hazards and the golden bite come from `Tools/props_gen.py`.
 
 | Sprite | Edible | Notes |
 |--------|--------|-------|
 | hotdog, pizza, burger | yes | available from the first item |
 | donut, pie | yes | worth more, appear after 5 eaten |
-| bomb | no | appears after 25 eaten; chomping it costs a strike |
-| boot | no | appears after 40 eaten |
+| golden | yes | rare (weight 1 against 5-6), worth 60, and only 12px wide, so its timing window is tighter than anything else's |
+| bomb | no | appears after 18 eaten; chomping it costs a strike |
+| boot | no | appears after 30 eaten |
+
+Spawn odds are the `weight` column in `food.json`; a missing weight means 1.
 
 Which items exist is `Resources/food.json`; how often they appear is
 `Core/Difficulty.cs`. Adding a food is one JSON row plus one PNG.

@@ -34,7 +34,6 @@ public partial class GameRoot : Node2D
     private const float ChompShake = 1.4f;
     private const float ShakeDecay = 16f;
     private const float FlashDecay = 4.5f;
-    private const float IntroSeconds = 1.8f;
 
     private enum Phase { Title, Intro, Fighting, Result, Shop }
 
@@ -55,6 +54,7 @@ public partial class GameRoot : Node2D
     private MatchHud _hud = null!;
     private ScreenOverlay _overlay = null!;
     private ShopScreen _shop = null!;
+    private DialogueScene _dialogue = null!;
     private Sfx _sfx = null!;
 
     private Phase _phase = Phase.Title;
@@ -62,7 +62,6 @@ public partial class GameRoot : Node2D
     private float _hitStop;
     private float _shake;
     private float _flashAlpha;
-    private float _introTimer;
 
     private readonly RandomNumberGenerator _shakeRng = new();
 
@@ -123,6 +122,10 @@ public partial class GameRoot : Node2D
         _overlay = new ScreenOverlay();
         AddChild(_overlay);
 
+        _dialogue = new DialogueScene();
+        _dialogue.Finished += OnDialogueFinished;
+        AddChild(_dialogue);
+
         _shop = new ShopScreen();
         _shop.BuyRequested += OnBuy;
         _shop.ContinueRequested += StartNextMatch;
@@ -179,17 +182,35 @@ public partial class GameRoot : Node2D
         _crumbs.Visible = true;
         _hud.Visible = true;
         _phase = Phase.Intro;
-        _introTimer = IntroSeconds;
 
         _barkCooldown = 0f;
         _playerWasAhead = false;
         _lastBarkCombo = 0;
         _clutchBarked = false;
 
-        var round = Career.Progress(_save) + 1;
-        _overlay.Show($"ROUND {round}", $"{next.Opponent.Name}\nof {Career.Ladder.Count} challengers", Ui.Gold);
-        _rival.Gloat(next.Opponent.Taunt);
         _sfx.Play(Sfx.Blip);
+
+        // The croc never speaks in words - he is starving, not chatty - so his half of
+        // the exchange is body language. It still gives him a turn in the frame.
+        _dialogue.Play("croc", next.Opponent.SpriteId, new[]
+        {
+            new DialogueScene.Line(false, next.Opponent.Name, next.Opponent.Taunt),
+            new DialogueScene.Line(true, "CROC", CrocReply(Career.Progress(_save))),
+        });
+    }
+
+    private static string CrocReply(int round) => round switch
+    {
+        0 => "*stomach growls loudly*",
+        1 => "*has not eaten since tuesday*",
+        2 => "*cracks knuckles, somehow*",
+        _ => "*grins with every tooth*",
+    };
+
+    private void OnDialogueFinished()
+    {
+        _overlay.Hide();
+        _phase = Phase.Fighting;
     }
 
     private void StartNextMatch()
@@ -295,12 +316,7 @@ public partial class GameRoot : Node2D
                 return;
 
             case Phase.Intro:
-                _introTimer -= dt;
-                if (_introTimer <= 0f || TakeChomp())
-                {
-                    _overlay.Hide();
-                    _phase = Phase.Fighting;
-                }
+                if (TakeChomp()) _dialogue.Advance();
                 return;
 
             case Phase.Result:

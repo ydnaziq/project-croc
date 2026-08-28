@@ -13,6 +13,11 @@ public partial class ScreenOverlay : Node2D
 {
     private const float CardY = 120f;
     private const float CardHeight = 92f;
+    private const float CardMargin = 8f;
+    private const float CardPadding = 6f;
+
+    /// <summary>Usable width inside the card, which is what text has to fit in.</summary>
+    private const float TextWidth = GameRoot.ViewportWidth - (CardMargin + CardPadding) * 2f;
 
     private Label _title = null!;
     private Label _subtitle = null!;
@@ -27,20 +32,17 @@ public partial class ScreenOverlay : Node2D
 
         _title = new Label
         {
-            Position = new Vector2(0, CardY + 14),
-            Size = new Vector2(GameRoot.ViewportWidth, 28),
+            Position = new Vector2(CardMargin + CardPadding, CardY + 12),
+            Size = new Vector2(TextWidth, 28),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = Ui.Text(Ui.Title, Ui.Paper),
+            ClipText = true,
         };
         AddChild(_title);
 
-        _subtitle = new Label
-        {
-            Position = new Vector2(0, CardY + 50),
-            Size = new Vector2(GameRoot.ViewportWidth, 40),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = Ui.Text(Ui.Small, new Color("c8c8d8")),
-        };
+        _subtitle = Ui.WrappedLabel("", Ui.Small, new Color("c8c8d8"), TextWidth,
+                                    HorizontalAlignment.Center);
+        _subtitle.Position = new Vector2(CardMargin + CardPadding, CardY + 48);
         AddChild(_subtitle);
 
         _banner = new Label
@@ -60,10 +62,14 @@ public partial class ScreenOverlay : Node2D
     /// before a single word is read.</summary>
     public void Show(string title, string subtitle, Color accent)
     {
+        // Drop the title a size rather than letting a long word run off the card.
+        // "DISQUALIFIED" does not fit at 24px on a 180px screen.
+        var size = Ui.Measure(title, Ui.Title).X <= TextWidth ? Ui.Title : Ui.Body;
+
         _title.Text = title;
+        _title.LabelSettings = Ui.Text(size, accent);
         _subtitle.Text = subtitle;
         _accent = accent;
-        _title.LabelSettings.FontColor = accent;
         _title.Visible = true;
         _subtitle.Visible = true;
         _cardAge = 0f;
@@ -119,7 +125,7 @@ public partial class ScreenOverlay : Node2D
         // than a menu appearing.
         var height = CardHeight * Mathf.Min(1f, _cardAge);
         var y = CardY + (CardHeight - height) / 2f;
-        var rect = new Rect2(8, y, GameRoot.ViewportWidth - 16, height);
+        var rect = new Rect2(CardMargin, y, GameRoot.ViewportWidth - CardMargin * 2f, height);
 
         Ui.Panel(this, rect, new Color("101020", 0.95f));
 

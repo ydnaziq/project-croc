@@ -91,6 +91,55 @@ public static class Ui
         canvas.DrawRect(new Rect2(rect.Position.X + 1, rect.Position.Y + 1, rect.Size.X - 2, 1), highlight);
     }
 
+    /// <summary>
+    /// The real width and height of a string, asked of the font rather than guessed
+    /// from the character count. Every overflowing box in this project came from
+    /// estimating this instead of measuring it.
+    /// </summary>
+    public static Vector2 Measure(string text, int size)
+    {
+        var font = Regular;
+
+        if (font is null)
+        {
+            // Only reached if the font failed to load; keeps callers from dividing by
+            // zero rather than pretending to be accurate.
+            return new Vector2(text.Length * size * 0.6f, size + 2);
+        }
+
+        var widest = 0f;
+        var lines = text.Split('\n');
+
+        foreach (var line in lines)
+        {
+            widest = Mathf.Max(widest, font.GetStringSize(line, HorizontalAlignment.Left, -1, size).X);
+        }
+
+        return new Vector2(widest, lines.Length * (size + 2));
+    }
+
+    /// <summary>
+    /// A label that wraps inside a given width and reports how tall it actually became,
+    /// so a panel can be drawn around it instead of under it.
+    /// </summary>
+    public static Label WrappedLabel(string text, int size, Color color, float width,
+                                     HorizontalAlignment align = HorizontalAlignment.Left)
+    {
+        return new Label
+        {
+            Text = text,
+            Size = new Vector2(width, size + 4),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            HorizontalAlignment = align,
+            LabelSettings = Text(size, color),
+            ClipText = false,
+        };
+    }
+
+    /// <summary>Height a wrapped label occupies once it is inside the tree.</summary>
+    public static float WrappedHeight(Label label) =>
+        Mathf.Max(label.GetLineCount(), 1) * label.GetLineHeight();
+
     /// <summary>A horizontal meter with a 1px frame, filled from the left.</summary>
     public static void Meter(CanvasItem canvas, Rect2 rect, float fraction, Color fill, Color empty)
     {

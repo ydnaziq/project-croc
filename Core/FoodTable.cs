@@ -15,7 +15,8 @@ public sealed record FoodType(
     bool Edible,
     string Movement,
     int Score,
-    int MinEatenToAppear);
+    int MinEatenToAppear,
+    int Weight = 1);
 
 public sealed class FoodTable
 {

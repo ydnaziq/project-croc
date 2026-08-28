@@ -48,13 +48,33 @@ public partial class ShopScreen : Node2D
         for (var i = 0; i < Career.Shop.Count; i++)
         {
             var y = FirstCardY + i * (CardHeight + CardGap);
-            _names.Add(Make(new Vector2(Margin + 26, y + 5), Ui.Small, Ui.Paper, HorizontalAlignment.Left));
-            _prices.Add(Make(new Vector2(-Margin - 4, y + 15), Ui.Small, Ui.Gold, HorizontalAlignment.Right));
+            // Explicit, non-overlapping columns: name on the left of the card after
+            // the swatch, price hard right. Sized so neither can run into the other.
+            var nameWidth = GameRoot.ViewportWidth - (Margin + 26) - 52f;
+            _names.Add(MakeSized(new Vector2(Margin + 26, y + 10), nameWidth, Ui.Small, Ui.Paper,
+                                 HorizontalAlignment.Left));
+            _prices.Add(MakeSized(new Vector2(GameRoot.ViewportWidth - Margin - 46f, y + 10), 40f,
+                                  Ui.Small, Ui.Gold, HorizontalAlignment.Right));
         }
 
         _continue = Make(new Vector2(0, ContinueY + 6), Ui.Body, Ui.Green, HorizontalAlignment.Center);
         _hint = Make(new Vector2(0, ContinueY + 30), Ui.Small, Ui.Dim, HorizontalAlignment.Center);
         _hint.Text = "tap to buy or wear";
+    }
+
+    private Label MakeSized(Vector2 position, float width, int size, Color color,
+                            HorizontalAlignment align)
+    {
+        var label = new Label
+        {
+            Position = position,
+            Size = new Vector2(width, size + 4),
+            HorizontalAlignment = align,
+            LabelSettings = Ui.Text(size, color),
+            ClipText = true,
+        };
+        AddChild(label);
+        return label;
     }
 
     private Label Make(Vector2 position, int size, Color color, HorizontalAlignment align)

@@ -58,6 +58,14 @@ shape instead of a ramp.
 **Deny rhythm.** Gaps between items vary by up to 85% at high difficulty. A steady gap
 lets the player lock into a metronome and stop reacting to what they see.
 
+**Vary the shape, not just the speed.** Bursts of three near-simultaneous items, rare
+high-value bites with tighter windows, and hazards that must be let past all change
+what the player is doing rather than how fast. A change of pace has to stay a minority:
+cluster odds cap at 22%, because if most food arrives in bursts, bursts become the pace.
+
+**Short bouts.** Matches run 20-26 seconds. Past about half a minute the timing stops
+being exciting and starts being work.
+
 **An opponent, not a target score.** The rival eats visibly, reacts to the lead
 changing, panics at a long combo. The same points landing beside a reacting rival feel
 completely different from the same points landing in silence.
@@ -81,6 +89,15 @@ croc turns. Selling "MIDNIGHT" as a word is asking someone to buy a label.
 
 **One verb.** A press anywhere advances every screen, because a press is the game's
 whole vocabulary. Shop rows are tappable directly - no hidden cursor to explain.
+
+**Measure text; never estimate it.** Every overflowing box in this project came from
+sizing a panel by character count instead of asking the font. `Ui.Measure` and
+`Ui.WrappedLabel` exist so a box is built around its text, and titles step down a size
+rather than running off the card.
+
+**Staging says who is talking.** In dialogue the speaker is lit and scaled up while the
+listener greys back. At 180px wide there is no room for a portrait, a name plate, and a
+line, so the picture carries what the box would otherwise have to.
 
 **Pixel font at native sizes.** Silkscreen renders on an 8px grid, so only 8/16/24 are
 used. Any other size resamples and goes soft, which breaks the line-weight rule.

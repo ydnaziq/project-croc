@@ -18,6 +18,7 @@ public partial class Bark : Node2D
     private Label _label = null!;
     private float _age;
     private float _width;
+    private float _height = 16f;
     private Mood _mood = Mood.Smug;
     private string _text = "";
 
@@ -28,19 +29,20 @@ public partial class Bark : Node2D
     {
         ZIndex = 22;
 
-        // Silkscreen is a fixed-width pixel font, so the bubble can be sized from the
-        // character count instead of measuring at runtime.
-        _width = Mathf.Max(40f, _text.Length * 5f + 12f);
+        // Measured, not estimated: the bubble is built around the text.
+        const float maxWidth = GameRoot.ViewportWidth - 24f;
+        var measured = Ui.Measure(_text, Ui.Small);
 
-        _label = new Label
-        {
-            Text = _text,
-            Position = new Vector2(-_width / 2f + 6f, -22f),
-            Size = new Vector2(_width - 12f, 12f),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = Ui.Text(Ui.Small, TextColor, outline: false),
-        };
+        _width = Mathf.Clamp(measured.X + 12f, 40f, maxWidth);
+
+        _label = Ui.WrappedLabel(_text, Ui.Small, TextColor, _width - 10f, HorizontalAlignment.Center);
+        _label.Position = new Vector2(-_width / 2f + 5f, -22f);
         AddChild(_label);
+
+        // Once it is in the tree the label knows how many lines it wrapped to, so the
+        // bubble can grow to fit rather than clipping.
+        _height = Mathf.Max(16f, Ui.WrappedHeight(_label) + 6f);
+        _label.Position = new Vector2(-_width / 2f + 5f, -8f - _height);
     }
 
     private Color TextColor => _mood switch
@@ -71,7 +73,7 @@ public partial class Bark : Node2D
         if (_mood == Mood.Panicked)
         {
             var shake = Mathf.Sin(_age * 40f) * 1f;
-            _label.Position = new Vector2(-_width / 2f + 6f + shake, -22f);
+            _label.Position = new Vector2(-_width / 2f + 5f + shake, -8f - _height);
         }
 
         Modulate = Colors.White with { A = _age > LifeSeconds - 0.35f ? (LifeSeconds - _age) / 0.35f : 1f };
@@ -82,9 +84,9 @@ public partial class Bark : Node2D
     {
         var pop = Mathf.Min(1f, _age / 0.09f);          // snaps open rather than fading in
         var w = _width * pop;
-        var h = 16f * pop;
+        var h = _height * pop;
 
-        Ui.Panel(this, new Rect2(-w / 2f, -24f, w, h), BubbleFill);
+        Ui.Panel(this, new Rect2(-w / 2f, -10f - h, w, h), BubbleFill);
 
         if (pop < 1f) return;
 

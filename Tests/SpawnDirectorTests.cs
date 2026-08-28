@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using CrocGame.Core;
 using Xunit;
 
@@ -80,6 +81,59 @@ public class SpawnDirectorTests
     [Fact]
     public void NeverSpawnsInediblesBeforeTheirThreshold() =>
         Assert.All(RunFor(Director(), seconds: 60f, eaten: 10), i => Assert.True(i.IsEdible));
+
+    [Fact]
+    public void RareItemsAppearFarLessOftenThanCommonOnes()
+    {
+        const string weighted = """
+        [
+          { "id": "common", "width": 16, "edible": true, "movement": "constant", "score": 10, "minEatenToAppear": 0, "weight": 9 },
+          { "id": "rare",   "width": 16, "edible": true, "movement": "constant", "score": 60, "minEatenToAppear": 0, "weight": 1 }
+        ]
+        """;
+
+        var director = new SpawnDirector(FoodTable.FromJson(weighted), new SeededRandom(4), spawnX: -20f);
+        var items = RunFor(director, seconds: 600f, eaten: 0);
+
+        var rare = items.Count(i => i.TypeId == "rare");
+
+        Assert.True(rare > 0, "the rare item never appeared at all");
+        Assert.True(rare < items.Count / 4,
+            $"rare item was not rare: {rare} of {items.Count}");
+    }
+
+    [Fact]
+    public void MissingWeightsDefaultToOne()
+    {
+        var table = FoodTable.FromJson(Json);
+        Assert.All(table.Types, t => Assert.Equal(1, t.Weight));
+    }
+
+    [Fact]
+    public void BurstsProduceGapsMuchTighterThanTheOrdinarySpacing()
+    {
+        // Clusters only start after 8 eaten, so ask for a difficulty that has them.
+        var director = Director(seed: 12);
+        var gaps = new List<float>();
+        var sinceLast = 0f;
+
+        for (var t = 0f; t < 400f; t += 1f / 60f)
+        {
+            sinceLast += 1f / 60f;
+
+            if (director.Tick(1f / 60f, eaten: 40) is not null)
+            {
+                gaps.Add(sinceLast);
+                sinceLast = 0f;
+            }
+        }
+
+        var difficulty = Difficulty.ForEaten(40);
+        var tight = gaps.Count(g => g < difficulty.SpacingMin * 0.6f);
+
+        Assert.True(tight > 0, "no burst gaps appeared at all");
+        Assert.True(tight < gaps.Count / 2, "almost everything was a burst");
+    }
 
     [Fact]
     public void SpawnsFasterAtHigherDifficulty()

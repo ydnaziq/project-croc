@@ -46,7 +46,9 @@ public static class Career
             LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE"),
     };
 
-    private static readonly float[] Durations = { 30f, 32f, 35f, 38f };
+    // Bouts are short on purpose. A match is a single burst of concentration; past
+    // about half a minute the timing stops being exciting and starts being work.
+    private static readonly float[] Durations = { 20f, 22f, 24f, 26f };
     private static readonly int[] DifficultyOffsets = { 0, 12, 26, 40 };
 
     public static readonly IReadOnlyList<ShopItem> Shop = new[]

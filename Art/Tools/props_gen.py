@@ -1,8 +1,12 @@
-"""NES-style inedible props for the croc timing game.
+"""NES-style props for the croc eating contest: hazards and the rare golden bite.
 
-Two 16x16 hazards that ride the same conveyor as the food. Chomping one costs a
-strike; letting one pass is correct play, so they have to read as obviously
-*not food* at a glance and at speed.
+Items that ride the same conveyor as the food but are not ordinary food.
+
+The two hazards cost a strike if chomped and are correct play to let pass, so they
+have to read as obviously *not food* at a glance and at speed. The golden bite is the
+opposite problem: rare and worth six times a hotdog, so it has to shout. It is drawn
+small - a 10px body in a 16px cell - because its scoring window is deliberately
+tighter than everything else's.
 
 Same conventions as food_gen.py: black outline, transparent background, 5 flat
 colours, authored as character rows. Rows are padded to 16x16 here rather than
@@ -50,7 +54,25 @@ BOOT = dict(
         '...KKKKKKKKKK',
     ])
 
-ITEMS = [('bomb', BOMB), ('boot', BOOT)]
+GOLDEN = dict(
+    palette={'K': '#000000', 'g': '#f8d878', 'd': '#c89000', 'w': '#f8f8f8', 'l': '#fcecb0'},
+    rows=[
+        '',
+        '',
+        '',
+        '.......w',
+        '....KKKKKK',
+        '...KggllggK',
+        '..KglllgggdK',
+        '..KgllggggdK',
+        '..KgggggggdK',
+        '..KggggggddK',
+        '...KgggdddK',
+        '....KKKKKK',
+        '.........w',
+    ])
+
+ITEMS = [('bomb', BOMB), ('boot', BOOT), ('golden', GOLDEN)]
 
 
 def normalise(spec):
@@ -60,6 +82,11 @@ def normalise(spec):
     while len(rows) < 16:
         rows.append('.' * 16)
     return rows[:16]
+
+
+def widest(rows):
+    """Rightmost non-empty column, used to report the true body width."""
+    return max((max((x for x, c in enumerate(r) if c != '.'), default=-1) for r in rows), default=-1) + 1
 
 
 def write_png(path, rows, palette, scale=1):
@@ -95,7 +122,7 @@ def main():
 
         write_png(os.path.join(out, name + '.png'), rows, spec['palette'])
         write_png(os.path.join(out, f'_preview_{name}_8x.png'), rows, spec['palette'], scale=8)
-        print(f'{name:8s} 5 colours, 16x16')
+        print(f'{name:8s} 5 colours, 16x16 cell, body {widest(rows)}px wide')
 
 
 if __name__ == '__main__':

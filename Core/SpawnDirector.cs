@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CrocGame.Core;
 
 /// <summary>
@@ -12,6 +14,7 @@ public sealed class SpawnDirector
 
     private float _secondsUntilNext;
     private int _nextId = 1;
+    private int _clusterRemaining;
 
     public SpawnDirector(FoodTable table, IRandomSource rng, float spawnX)
     {
@@ -28,7 +31,7 @@ public sealed class SpawnDirector
         if (_secondsUntilNext > 0f) return null;
 
         var difficulty = Difficulty.ForEaten(eaten);
-        _secondsUntilNext = Spacing(difficulty);
+        ScheduleNext(difficulty);
 
         var wantInedible = difficulty.InedibleChance > 0f
                            && _rng.NextFloat() < difficulty.InedibleChance;
@@ -40,7 +43,7 @@ public sealed class SpawnDirector
             if (candidates.Count == 0) return null;
         }
 
-        var type = candidates[_rng.NextInt(candidates.Count)];
+        var type = PickWeighted(candidates);
 
         return new FoodItem(
             id: _nextId++,
@@ -53,6 +56,49 @@ public sealed class SpawnDirector
     }
 
     private float Spacing(Difficulty d) => d.SpacingMin + (d.SpacingMax - d.SpacingMin) * _rng.NextFloat();
+
+    /// <summary>
+    /// Decides when the item after this one arrives. Most of the time that is an
+    /// ordinary jittered gap, but occasionally it opens a burst: three items nearly
+    /// back to back, which the player has to take as one fast sequence. Bursts are the
+    /// main source of moment-to-moment variety - a stream of evenly spaced food is the
+    /// same press over and over however fast it moves.
+    /// </summary>
+    private void ScheduleNext(Difficulty d)
+    {
+        if (_clusterRemaining > 0)
+        {
+            _clusterRemaining--;
+            _secondsUntilNext = d.SpacingMin * 0.42f;
+            return;
+        }
+
+        if (d.ClusterChance > 0f && _rng.NextFloat() < d.ClusterChance)
+        {
+            _clusterRemaining = 2;
+            _secondsUntilNext = d.SpacingMin * 0.42f;
+            return;
+        }
+
+        _secondsUntilNext = Spacing(d);
+    }
+
+    /// <summary>Weighted pick, so rare items can be genuinely rare.</summary>
+    private FoodType PickWeighted(IReadOnlyList<FoodType> candidates)
+    {
+        var total = 0;
+        foreach (var c in candidates) total += c.Weight < 1 ? 1 : c.Weight;
+
+        var roll = _rng.NextInt(total);
+
+        foreach (var c in candidates)
+        {
+            roll -= c.Weight < 1 ? 1 : c.Weight;
+            if (roll < 0) return c;
+        }
+
+        return candidates[^1];
+    }
 
     /// <summary>
     /// The type's declared movement is a default. As difficulty rises, the director

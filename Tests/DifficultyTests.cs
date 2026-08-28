@@ -35,7 +35,7 @@ public class DifficultyTests
             Assert.True(min <= previous, $"spacing widened at {eaten} eaten");
             previous = min;
         }
-        Assert.Equal(0.30f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
+        Assert.Equal(0.22f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
     }
 
     [Fact]
@@ -46,6 +46,15 @@ public class DifficultyTests
             var d = Difficulty.ForEaten(eaten);
             Assert.True(d.SpacingMax >= d.SpacingMin, $"inverted spacing at {eaten} eaten");
         }
+    }
+
+    [Fact]
+    public void ClustersAreAbsentEarlyThenBecomeCommon()
+    {
+        Assert.Equal(0f, Difficulty.ForEaten(7).ClusterChance, precision: 4);
+        Assert.True(Difficulty.ForEaten(8).ClusterChance > 0f);
+        Assert.True(Difficulty.ForEaten(60).ClusterChance > Difficulty.ForEaten(10).ClusterChance);
+        Assert.Equal(0.22f, Difficulty.ForEaten(10_000).ClusterChance, precision: 4);
     }
 
     [Fact]
