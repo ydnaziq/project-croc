@@ -1,3 +1,9 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Python bytecode
+__pycache__/
+
+# Secrets
+.env
