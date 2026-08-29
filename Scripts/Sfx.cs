@@ -19,9 +19,12 @@ public partial class Sfx : Node
     public const string Frenzy = "frenzy";
     public const string Win = "win";
     public const string Lose = "lose";
+    public const string Cheer = "cheer";
+    public const string Aww = "aww";
+    public const string Boo = "boo";
 
     private static readonly string[] Names =
-        { Chomp, Crunch, Whiff, Pass, Strike, Coin, Blip, Frenzy, Win, Lose };
+        { Chomp, Crunch, Whiff, Pass, Strike, Coin, Blip, Frenzy, Win, Lose, Cheer, Aww, Boo };
 
     private readonly Dictionary<string, AudioStreamPlayer> _players = new();
 
@@ -44,12 +47,20 @@ public partial class Sfx : Node
         }
     }
 
-    /// <summary>Plays a sound, or does nothing if it failed to load. Never throws.</summary>
-    public void Play(string name, float pitch = 1f)
+    /// <summary>
+    /// Plays a sound, or does nothing if it failed to load. Never throws.
+    ///
+    /// volumeDb exists because every file is normalised to the same 0.32 peak by the
+    /// generator, so relative loudness cannot be baked in. The crowd needs it: the
+    /// cheer should be the loudest thing in the room and the commiserating "aww"
+    /// should not.
+    /// </summary>
+    public void Play(string name, float pitch = 1f, float volumeDb = 0f)
     {
         if (!_players.TryGetValue(name, out var player)) return;
 
         player.PitchScale = pitch;
+        player.VolumeDb = volumeDb;
         player.Play();
     }
 }

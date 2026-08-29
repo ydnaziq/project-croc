@@ -1,6 +1,6 @@
 # Audio
 
-Ten chiptune sound effects, synthesised by `../Tools/sfx_gen.py` and committed as Ogg.
+Thirteen chiptune sound effects, synthesised by `../Tools/sfx_gen.py` and committed as Ogg.
 
 ## Why these are synthesised rather than AI-generated
 
@@ -16,6 +16,15 @@ instead of beside it. They are also short, deterministic, and free to regenerate
 Everything is normalised to 0.32 peak rather than full scale. These sounds stack, and
 stacked square waves get painful fast.
 
+Because normalisation gives every file the same peak, relative loudness cannot be baked
+in and is set at playback instead - `Sfx.Play` takes a `volumeDb`. The crowd depends on
+that: the cheer plays at full, the "aww" at -7dB and the boo at -4dB, so the room is
+loudest when it is pleased with you.
+
+The three crowd cues deliberately break the "keep it short" rule above. That rule
+exists because the chomp fires several times a second and turns to mud; the crowd fires
+every few seconds at most, and a room full of people cannot say anything in 80ms.
+
 | File | ms | Played when |
 |---|---|---|
 | `chomp.ogg` | 62 | a chomp lands on food |
@@ -28,6 +37,9 @@ stacked square waves get painful fast.
 | `frenzy.ogg` | 250 | frenzy mode starts |
 | `win.ogg` | 565 | the croc wins a match |
 | `lose.ogg` | 720 | the croc loses a match |
+| `cheer.ogg` | 480 | the crowd approves: a combo milestone, frenzy, hunger, a banked pot, a win |
+| `aww.ogg` | 400 | the crowd commiserates: a strike, or losing on points |
+| `boo.ogg` | 480 | the crowd turns: every tooth lost inside one phase, and nothing else |
 
 ## Regenerating
 

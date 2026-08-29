@@ -34,6 +34,14 @@ Competitive-eating props. 16x16, transparent background, 1px black outline,
 `food.png` is the same five as an 80x16 strip in that order (frame `i` at
 `x = i * 16`), for use as a single atlas.
 
+## The crowd
+
+The stands are **not** in `arena.png`. `arena_gen.py` draws the empty stand at
+y=140..172 and `Scripts/Crowd.cs` draws two staggered rows of silhouettes over it every
+frame, at y=150 and y=162 in the same `crowd` / `crowd_l` values as the rest of the
+arena. A baked crowd cannot bob, stand up or react, and a crowd that cannot do those
+things is furniture.
+
 ## Animations
 
 Each character .aseprite holds 18 frames with three tags:

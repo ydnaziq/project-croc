@@ -106,6 +106,21 @@ broken by two interludes. Past about half a minute of *continuous* timing the pr
 stops being exciting and starts being work, which is why the breaks are load-bearing
 rather than decorative.
 
+**The crowd is on your side.** It reacts to how the player is playing, not to who is
+winning, and an ordinary mistake gets a sympathetic "aww" rather than a boo. Booing is
+reserved for losing every tooth inside one phase. A game whose whole premise is that
+anyone can finish it must not aim its harshest sound at the player already having the
+worst time.
+
+**A mood is a dial, not a switch.** Crowd hype drives bob height, bob speed,
+brightness, and how many are on their feet, all at once - so the stand is always saying
+something without ever shouting. It decays back to a floor, and resets each phase, so
+FEAST has to earn its noise instead of inheriting it from a good PLAIN.
+
+**Only moments get a voice.** Every bite moves the crowd's mood; only milestones,
+frenzy, hunger and a banked pot make a sound, behind the same cooldown that keeps the
+rival from becoming wallpaper. A crowd that reacts to everything is static.
+
 **An opponent, not a target score.** The rival eats visibly, reacts to the lead
 changing, panics at a long combo. The same points landing beside a reacting rival feel
 completely different from the same points landing in silence.

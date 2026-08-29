@@ -179,10 +179,56 @@ def s_lose():
             tri(98, 0.42, vol=0.6, release=0.3)))
 
 
+# ------------------------------------------------------------------ the crowd
+# These three break the "keep it under 100ms" rule on purpose. That rule exists because
+# the chomp fires several times a second and turns to mud; the crowd fires every few
+# seconds at most, and a room full of people cannot say anything in 80ms.
+
+
+def s_cheer():
+    """The room getting to its feet. A noise swell that brightens as it climbs - the
+    period drops step by step, which is how a NES faked a rising roar - with a whooping
+    arpeggio riding on top so it reads as people rather than static."""
+    swell = seq(
+        noise(0.10, vol=0.45, period=7, attack=0.06, release=0.02),
+        noise(0.12, vol=0.62, period=5, attack=0.05, release=0.02),
+        noise(0.14, vol=0.80, period=3, attack=0.05, release=0.04),
+        noise(0.12, vol=0.60, period=2, attack=0.02, release=0.10),
+    )
+    whoop = arp([392, 523, 659, 784, 880], 0.055, duty=0.25, vol=0.5, release=0.012)
+    return mix(swell, whoop)
+
+
+def s_aww():
+    """Sympathy, not judgement. A soft falling third over a low murmur: the sound of a
+    room that is on your side and has just watched you miss. This is what an ordinary
+    mistake gets, because a game trying to be winnable by anyone should not spend its
+    loudest reaction on the player who is already struggling."""
+    voice = seq(
+        mix(pulse(330, 0.16, duty=0.5, vol=0.50, release=0.05),
+            tri(165, 0.16, vol=0.45, release=0.05)),
+        mix(pulse(262, 0.24, duty=0.5, vol=0.45, slide=-0.06, release=0.16),
+            tri(131, 0.24, vol=0.40, release=0.16)),
+    )
+    murmur = noise(0.40, vol=0.16, period=12, attack=0.05, release=0.22)
+    return mix(voice, murmur)
+
+
+def s_boo():
+    """Reserved for a real collapse - every tooth lost inside one phase. Low, reedy and
+    falling. It is the only crowd sound not on the player's side, so it has to stay
+    rare enough to mean something when it does land."""
+    return mix(
+        seq(pulse(196, 0.14, duty=0.125, vol=0.80, release=0.03),
+            pulse(147, 0.34, duty=0.125, vol=0.75, slide=-0.22, release=0.22)),
+        noise(0.46, vol=0.30, period=14, attack=0.04, release=0.26))
+
+
 SOUNDS = [
     ('chomp', s_chomp), ('crunch', s_crunch), ('whiff', s_whiff), ('pass', s_pass),
     ('strike', s_strike), ('coin', s_coin), ('blip', s_blip), ('frenzy', s_frenzy),
     ('win', s_win), ('lose', s_lose),
+    ('cheer', s_cheer), ('aww', s_aww), ('boo', s_boo),
 ]
 
 

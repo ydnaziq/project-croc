@@ -114,18 +114,14 @@ for x in range(0, W, 20):
     rect(x + 1, 119, 3, 2, 'stone_l')
 
 # ------------------------------------------------------------------ crowd
-# Silhouettes only: heads and shoulders, two staggered rows, no detail. They are
-# scenery, and detail here would compete with the food.
-def head(cx, cy, c):
-    rect(cx - 4, cy - 4, 8, 8, c)
-    rect(cx - 5, cy - 2, 1, 5, c)
-    rect(cx + 4, cy - 2, 1, 5, c)
-    rect(cx - 7, cy + 4, 14, 6, c)
-
-for i, x in enumerate(range(8, W, 21)):
-    head(x, 150, 'crowd_l')
-for i, x in enumerate(range(-2, W, 21)):
-    head(x, 162, 'crowd')
+# The crowd is NOT baked in any more. It is drawn every frame by Scripts/Crowd.cs so it
+# can bob, stand up and react, which a texture cannot do. What stays here is the empty
+# stand they sit in - the architecture is static, the people are not.
+#
+# The stand runs y=140..172. Crowd.cs draws two staggered rows at y=150 and y=162 over
+# the top of it, using the same 'crowd' and 'crowd_l' values listed above so a moving
+# crowd still matches the palette the rest of the arena was built from.
+rect(0, 140, W, 32, 'wall_a')
 
 hline(172, 0, W, 'black')
 rect(0, 173, W, 37, 'wall_lo')

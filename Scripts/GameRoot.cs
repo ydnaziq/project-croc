@@ -47,6 +47,7 @@ public partial class GameRoot : Node2D
 
     private Node2D _world = null!;
     private Backdrop _backdrop = null!;
+    private Crowd _crowd = null!;
     private ConveyorView _conveyor = null!;
     private BeltView _belt = null!;
     private CrocView _croc = null!;
@@ -82,6 +83,15 @@ public partial class GameRoot : Node2D
     private bool _clutchBarked;
     private bool _dialogueWasInterlude;
 
+    /// <summary>
+    /// The crowd needs breathing room for exactly the reason the rival's barks do: a
+    /// reaction to everything is wallpaper. The mood still moves silently on every
+    /// bite - only the sound is rationed.
+    /// </summary>
+    private const float CrowdCooldown = 1.2f;
+    private float _crowdCooldown;
+    private int _lastCheeredCombo;
+
     public override void _Ready()
     {
         _saveStore = new GodotSaveStore();
@@ -96,6 +106,9 @@ public partial class GameRoot : Node2D
 
         _backdrop = new Backdrop();
         _world.AddChild(_backdrop);
+
+        _crowd = new Crowd();
+        _world.AddChild(_crowd);
 
         _rival = new RivalView { Position = new Vector2(JawCenterX, RivalY) };
         _world.AddChild(_rival);
@@ -309,6 +322,9 @@ public partial class GameRoot : Node2D
         if (ended.Result == BoutResult.Won)
         {
             Career.RecordWin(_save, ended);
+            _crowd.Lift(1f);
+            _crowd.Spike(1f);
+            CrowdSay(Sfx.Cheer, volumeDb: 0f, urgent: true);
             _croc.PlayCelebrate();
             _sfx.Play(Sfx.Win);
             if (ended.Prize > 0) _sfx.Play(Sfx.Coin);
@@ -320,6 +336,9 @@ public partial class GameRoot : Node2D
         else
         {
             Career.RecordLoss(_save, ended);
+
+            // Losing on points is not a disgrace; the room is sorry, not hostile.
+            CrowdSay(Sfx.Aww, volumeDb: -6f, urgent: true);
             _sfx.Play(Sfx.Lose);
 
             // There is no disqualification any more: a knockout costs a phase, and the
@@ -533,6 +552,7 @@ public partial class GameRoot : Node2D
 
     private void DecayEffects(float dt)
     {
+        if (_crowdCooldown > 0f) _crowdCooldown = Mathf.Max(0f, _crowdCooldown - dt);
         if (_shake > 0f) _shake = Mathf.Max(0f, _shake - ShakeDecay * dt);
         if (_zoom > 0f) _zoom = Mathf.Max(0f, _zoom - dt * 4.5f);
 
@@ -580,11 +600,13 @@ public partial class GameRoot : Node2D
                 case Passed passed:
                     _belt.Remove(passed.Item.Id);
                     _sfx.Play(Sfx.Pass);
+                    _crowd.Drop(0.06f);   // silent: food goes past far too often to voice
                     break;
                 case OpponentAte ate:
                     _rival.Ate(ate.OpponentScore);
                     break;
                 case FrenzyStarted:
+                    CrowdCheer(lift: 0.40f, spike: 0.9f, pitch: 1.05f);
                     _sfx.Play(Sfx.Frenzy);
                     _shake = 3f;
                     _zoom = 1f;
@@ -595,8 +617,11 @@ public partial class GameRoot : Node2D
                     break;
                 case StrikeAdded:
                     OnStrike();
+                    CrowdCommiserate(0.30f);
                     break;
                 case PhaseStarted started:
+                    _crowd.ResetForPhase();
+                    _lastCheeredCombo = 0;
                     _overlay.Flash(started.Phase.Name);
                     _sfx.Play(Sfx.Blip, 1.1f);
                     _zoom = 1f;
@@ -607,6 +632,11 @@ public partial class GameRoot : Node2D
                     StartInterlude(ended);
                     break;
                 case PhaseKnockout:
+                    // The one thing the crowd actually boos: every tooth gone inside a
+                    // single phase. Urgent, so it is never swallowed by the cooldown.
+                    _crowd.Drop(0.6f);
+                    _crowd.Slump(1f);
+                    CrowdSay(Sfx.Boo, volumeDb: -4f, urgent: true);
                     _overlay.Flash("OUT!");
                     _sfx.Play(Sfx.Lose);
                     _shake = StrikeShake * 1.6f;
@@ -624,11 +654,14 @@ public partial class GameRoot : Node2D
                     _overlay.Flash($"-{wiped.Lost}");
                     break;
                 case BuffTaken taken:
+                    _crowd.Lift(0.15f);
+                    _crowd.Spike(0.4f);
                     _sfx.Play(Sfx.Frenzy, BuffPitch(taken.Kind));
                     _overlay.Flash(BuffLabel(taken.Kind));
                     _croc.Punch(1.2f);
                     break;
                 case HungerStarted:
+                    CrowdCheer(lift: 0.45f, spike: 1f, pitch: 0.95f);
                     _overlay.Flash("HUNGRY");
                     _sfx.Play(Sfx.Frenzy, 0.6f);
                     _flashAlpha = 0.6f;
@@ -660,6 +693,10 @@ public partial class GameRoot : Node2D
         _croc.Punch(1.4f);
         _overlay.Flash($"+{banked.Paid}");
         _crumbs.Burst(new Vector2(JawCenterX, BeltY), 18, 1.6f);
+
+        // A bigger payout is a bigger noise, up to a point.
+        CrowdCheer(lift: 0.20f + Mathf.Min(banked.Paid, 300) / 1000f,
+                   spike: 0.8f, pitch: 1f + 0.02f * banked.Multiplier);
 
         if (banked.Paid > 100)
         {
@@ -715,6 +752,15 @@ public partial class GameRoot : Node2D
                       1f + 0.03f * Math.Min(chomped.Combo, 8));
         }
 
+        // Every bite lifts the room a little; only the milestones are allowed a voice.
+        _crowd.Lift(0.05f);
+
+        if (chomped.Combo >= 5 && chomped.Combo % 5 == 0 && chomped.Combo != _lastCheeredCombo)
+        {
+            _lastCheeredCombo = chomped.Combo;
+            CrowdCheer(lift: 0.25f, spike: 0.7f, pitch: 1f + 0.03f * (chomped.Combo / 5));
+        }
+
         _hud.PulseCombo();
         AddChild(ComboPopup.Create(new Vector2(JawCenterX + 28f, BeltY - 34f),
                                    chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy || golden));
@@ -768,6 +814,38 @@ public partial class GameRoot : Node2D
 
     private string RivalLine(Func<OpponentDef, string> pick) =>
         _bout is null ? "" : pick(_bout.Def.Opponent);
+
+    /// <summary>
+    /// The crowd's voice, rationed. Volume is set per cue rather than baked into the
+    /// files, which are all normalised to the same peak: the cheer is the loudest thing
+    /// in the room and the commiseration is not.
+    /// </summary>
+    private void CrowdSay(string sound, float volumeDb, float pitch = 1f, bool urgent = false)
+    {
+        if (!urgent && _crowdCooldown > 0f) return;
+
+        _crowdCooldown = CrowdCooldown;
+        _sfx.Play(sound, pitch, volumeDb);
+    }
+
+    private void CrowdCheer(float lift, float spike, float pitch = 1f)
+    {
+        _crowd.Lift(lift);
+        _crowd.Spike(spike);
+        CrowdSay(Sfx.Cheer, volumeDb: 0f, pitch: pitch);
+    }
+
+    /// <summary>
+    /// An ordinary mistake. The room winces with the player rather than at them - this
+    /// game's whole premise is that anyone can finish it, so its harshest sound is not
+    /// the one aimed at whoever is already struggling.
+    /// </summary>
+    private void CrowdCommiserate(float drop)
+    {
+        _crowd.Drop(drop);
+        _crowd.Slump(0.5f);
+        CrowdSay(Sfx.Aww, volumeDb: -7f);
+    }
 
     private void OnStrike()
     {
