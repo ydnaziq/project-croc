@@ -3,8 +3,12 @@ using System.Linq;
 
 namespace CrocGame.Core;
 
-/// <summary>A cosmetic the croc can buy with prize money. Purely a tint on the sprite.</summary>
-public sealed record ShopItem(string Id, string Name, int Cost, string Tint);
+/// <summary>
+/// A cosmetic the croc can buy and wear. A drawn object, not a colour multiply:
+/// tinting a flat five-colour sprite produces colours that are in no palette, mostly
+/// just makes the croc muddy, and sells the player a word instead of a thing.
+/// </summary>
+public sealed record ShopItem(string Id, string Name, int Cost, string SpriteId);
 
 public enum PurchaseResult
 {
@@ -86,10 +90,13 @@ public static class Career
 
     public static readonly IReadOnlyList<ShopItem> Shop = new[]
     {
-        new ShopItem("skin_chef", "CHEF WHITE", 30, "f8f8f8"),
-        new ShopItem("skin_gold", "GOLD TOOTH", 80, "f8d878"),
-        new ShopItem("skin_shadow", "MIDNIGHT", 150, "7878b8"),
-        new ShopItem("skin_neon", "NEON", 250, "58f8d8"),
+        // The ids never change: an existing save keeps whatever it bought. The costs
+        // do not change either - the ladder pays 375 and the shop asks 510, and that
+        // gap is what makes buying one of these a choice.
+        new ShopItem("skin_chef", "CHEF HAT", 30, "skin_chef"),
+        new ShopItem("skin_gold", "GOLD TOOTH", 80, "skin_gold"),
+        new ShopItem("skin_shadow", "SHADES", 150, "skin_shadow"),
+        new ShopItem("skin_neon", "NEON CROWN", 250, "skin_neon"),
     };
 
     /// <summary>The rival's line for the interlude after the given phase.</summary>

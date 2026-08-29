@@ -27,6 +27,27 @@ competes, the game gets harder for the wrong reason.
 soft round dots and looked like a different medium pasted on top. Bursts are now
 hard-edged squares snapped to whole pixels, coloured from the food palette.
 
+**Cosmetics are objects, not tints.** Multiplying a flat five-colour sprite by a colour
+produces colours that are in no palette and mostly just makes the sprite muddy. A hat
+is a hat.
+
+**An accessory must deform with what it sits on.** The worn cosmetic is a child of the
+croc sprite, so it squashes with the bite. One that holds still reads as a sticker on
+the screen.
+
+**Animation is generated, not painted.** Every character frame comes from
+`Tools/cast_gen.py` - pose patches composed into tags, baked through Aseprite. A frame
+painted by hand on top is lost at the next regeneration, and the generator's symmetry
+and palette assertions are what keep thirty frames consistent.
+
+**New tags append, never insert.** `flinch`, `gulp` and `taunt` went after frame 17 so
+`idle`, `celebrate` and `eat` keep their indices. Inserting a tag silently renumbers
+every frame every reader depends on.
+
+**A sprite must match its hitbox.** Each power-up's drawn width equals the width
+declared in `food.json`, because a food's own width *is* its timing window. `food_gen.py`
+prints the used column count so a mismatch is caught at generation time.
+
 **Characters need presence.** The croc is drawn at 2x and stands nearly a third of the
 screen. A protagonist rendered at 32px on a 180px canvas is set dressing.
 
@@ -148,8 +169,9 @@ the player is watching the belt.
 **Colour before words.** Win cards are green, loss cards red, frenzy popups a different
 colour and size from ordinary ones. The reading is a confirmation, not the message.
 
-**Show the thing, not its name.** Shop cards carry a swatch of the actual colour the
-croc turns. Selling "MIDNIGHT" as a word is asking someone to buy a label.
+**Show the thing, not its name.** Shop cards carry the actual object the croc will
+wear, drawn at 1:1. This started as a colour swatch, which was halfway there; selling
+"MIDNIGHT" as a word is asking someone to buy a label.
 
 **One verb.** A press anywhere advances every screen, because a press is the game's
 whole vocabulary. Shop rows are tappable directly - no hidden cursor to explain.

@@ -416,12 +416,9 @@ public partial class GameRoot : Node2D
 
     private void ApplySkin()
     {
-        var skin = Career.EquippedSkin(_save);
-        _skinTint = skin is null ? Colors.White : new Color(skin.Tint);
-        _croc.SetGlow(0f, _skinTint);
+        _croc.SetCosmetic(Career.EquippedSkin(_save)?.SpriteId ?? "");
+        _croc.SetGlow(0f);
     }
-
-    private Color _skinTint = Colors.White;
 
     // ------------------------------------------------------------------ loop
 
@@ -537,7 +534,7 @@ public partial class GameRoot : Node2D
 
         _conveyor.SetZoneOccupied(occupied);
         _frenzy.SetAmount(frenzy);
-        _croc.SetGlow(frenzy, _skinTint);
+        _croc.SetGlow(frenzy);
 
         _belt.Sync(phase.Items);
         _belt.PruneMissing(phase.Items);

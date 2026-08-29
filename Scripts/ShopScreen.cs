@@ -90,6 +90,23 @@ public partial class ShopScreen : Node2D
         return label;
     }
 
+    private readonly Dictionary<string, Texture2D?> _cosmetics = new();
+
+    /// <summary>Loads a cosmetic once and remembers it, missing ones included, so a
+    /// gap costs one warning rather than one per frame.</summary>
+    private Texture2D? CosmeticTexture(string spriteId)
+    {
+        if (_cosmetics.TryGetValue(spriteId, out var cached)) return cached;
+
+        var path = $"res://Art/ExportedSprites/Cosmetics/{spriteId}.png";
+        var texture = ResourceLoader.Load<Texture2D>(path);
+
+        if (texture is null) GD.PushWarning($"Missing cosmetic {path}");
+
+        _cosmetics[spriteId] = texture;
+        return texture;
+    }
+
     public void Open(SaveData data)
     {
         _data = data;
@@ -152,9 +169,13 @@ public partial class ShopScreen : Node2D
             var fill = i == _cursor ? Ui.PanelFillLit : Ui.PanelFill;
             Ui.RaisedPanel(this, card, fill, new Color("4a4a70"));
 
-            // The swatch: the colour the croc actually turns.
-            var swatch = new Rect2(card.Position.X + 6, y + 8, 14, 14);
-            Ui.Panel(this, swatch, new Color(item.Tint));
+            // The object itself, drawn at 1:1 in the gutter each card already reserves.
+            // A shop that sells a hat should show the hat.
+            var texture = CosmeticTexture(item.SpriteId);
+            if (texture is not null)
+            {
+                DrawTexture(texture, new Vector2(card.Position.X + 4, y + (CardHeight - 16) / 2f));
+            }
 
             if (worn)
             {

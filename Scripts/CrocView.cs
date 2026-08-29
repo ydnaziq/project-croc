@@ -147,11 +147,50 @@ public partial class CrocView : AnimatedSprite2D
     /// Frenzy glow. Godot has no cheap per-sprite outline, so the croc is brightened
     /// on a pulse instead - readable at this scale and costs nothing.
     /// </summary>
-    public void SetGlow(float amount, Color skinTint)
+    public void SetGlow(float amount)
     {
         // Gentle: a strong multiply blows the sprite out to pale green and costs
         // the black outline that holds the pixel art together.
         var glow = 1f + 0.3f * amount;
-        Modulate = new Color(skinTint.R * glow, skinTint.G * glow, skinTint.B * glow, skinTint.A);
+        Modulate = new Color(glow, glow, glow, 1f);
     }
+
+    private Sprite2D? _cosmetic;
+
+    /// <summary>
+    /// The cosmetic the croc is wearing, as a child sprite so it inherits the
+    /// squash-and-stretch. An accessory that does not deform with the head reads as a
+    /// sticker stuck on the screen rather than something the croc has on.
+    /// </summary>
+    public void SetCosmetic(string spriteId)
+    {
+        _cosmetic?.QueueFree();
+        _cosmetic = null;
+
+        if (spriteId == "") return;
+
+        var texture = ResourceLoader.Load<Texture2D>(
+            $"res://Art/ExportedSprites/Cosmetics/{spriteId}.png");
+
+        if (texture is null)
+        {
+            GD.PushWarning($"Missing cosmetic {spriteId}");
+            return;
+        }
+
+        _cosmetic = new Sprite2D { Texture = texture, Position = CosmeticAnchor(spriteId), ZIndex = 1 };
+        AddChild(_cosmetic);
+    }
+
+    /// <summary>
+    /// Where each cosmetic sits on the 32x32 frame. These come from cosmetic_gen.py,
+    /// which prints them on every run - they are not estimated here.
+    /// </summary>
+    private static Vector2 CosmeticAnchor(string spriteId) => spriteId switch
+    {
+        "skin_chef" => new Vector2(0, -11),
+        "skin_gold" => new Vector2(4, 4),
+        "skin_shadow" => new Vector2(0, -4),
+        _ => new Vector2(0, -12),
+    };
 }
