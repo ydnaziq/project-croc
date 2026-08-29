@@ -76,6 +76,31 @@ high-value bites with tighter windows, and hazards that must be let past all cha
 what the player is doing rather than how fast. A change of pace has to stay a minority:
 cluster odds cap at 22%, because if most food arrives in bursts, bursts become the pace.
 
+**Three acts, not one block.** A bout is PLAIN, HAZARD, FEAST, with dialogue between.
+Short bouts still matters - each phase is 8-10 seconds, a single burst of concentration
+- but one undifferentiated block has no shape to talk over and nothing to introduce.
+
+**A strike ends a phase, never a run.** Three strikes knocks the croc out of the
+current phase and hands the rival its remaining seconds. Losing that badly still hurts,
+visibly, but a beginner who blows the first act still plays the other two and can still
+win. Anything that can end a run is a ceiling.
+
+**Give the losing player something, automatically.** Hunger charges only from a deficit
+and fires by itself. A comeback mechanic that has to be earned or activated is no use
+to the player who needs it, because that player is the one already struggling with the
+inputs.
+
+**The wager uses the verb you already have.** The pot is banked by biting a coin, so
+push-your-luck costs no new button and no menu: the decision is a position on the belt
+and a number drawn on the sprite.
+
+**Never risk what the player already scored.** The pot is upside stacked on the score.
+Banking every coin on sight is safe, viable play - greed is an option, not a tax.
+
+**Pay for strength with window width.** SLOW is 16px wide and arrives alone; a GOLD
+TOOTH is 8px and arrives between two bombs. Risk and reward are the same axis, and it
+is one the player can read from across the screen.
+
 **Short bouts.** Matches run 20-26 seconds. Past about half a minute the timing stops
 being exciting and starts being work.
 
@@ -120,6 +145,20 @@ rather than running off the card.
 **Staging says who is talking.** In dialogue the speaker is lit and scaled up while the
 listener greys back. At 180px wide there is no room for a portrait, a name plate, and a
 line, so the picture carries what the box would otherwise have to.
+
+**Measure height too, not just width.** Boxes used to be a fixed size with text at
+fixed offsets, so nothing was ever actually centred - it was positioned to look centred
+for one particular string. `Ui.LayoutColumn` sizes the box around the block and centres
+the block in the box.
+
+**Lay out before you draw, never during.** `ScreenOverlay` positioned its labels inside
+`_Draw`. Changing a Control's rect during the draw pass re-enters Godot's layout and
+hangs the frame with no error at all. Drawing draws; it does not decide where things go.
+
+**Every readout needs its own lane.** At 180px wide, a new HUD element will land on an
+existing one. The phase name was added at the same y as the rival's name plate; the fix
+was not to move it but to delete it, because the pips and the phase banner already said
+it.
 
 **Pixel font at native sizes.** Silkscreen renders on an 8px grid, so only 8/16/24 are
 used. Any other size resamples and goes soft, which breaks the line-weight rule.
