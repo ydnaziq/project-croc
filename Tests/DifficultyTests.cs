@@ -7,7 +7,7 @@ public class DifficultyTests
 {
     [Fact]
     public void StartsAtTheOpeningBeltSpeed() =>
-        Assert.Equal(55f, Difficulty.ForEaten(0).BeltSpeed, precision: 2);
+        Assert.Equal(45f, Difficulty.ForEaten(0).BeltSpeed, precision: 2);
 
     [Fact]
     public void BeltSpeedIncreasesMonotonically()
@@ -23,7 +23,7 @@ public class DifficultyTests
 
     [Fact]
     public void BeltSpeedIsCapped() =>
-        Assert.Equal(260f, Difficulty.ForEaten(10_000).BeltSpeed, precision: 2);
+        Assert.Equal(215f, Difficulty.ForEaten(10_000).BeltSpeed, precision: 2);
 
     [Fact]
     public void SpacingNarrowsMonotonicallyAndIsFloored()
@@ -35,7 +35,7 @@ public class DifficultyTests
             Assert.True(min <= previous, $"spacing widened at {eaten} eaten");
             previous = min;
         }
-        Assert.Equal(0.22f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
+        Assert.Equal(0.30f, Difficulty.ForEaten(10_000).SpacingMin, precision: 2);
     }
 
     [Fact]
@@ -87,11 +87,11 @@ public class DifficultyTests
     }
 
     [Fact]
-    public void InediblesAreAbsentUntilTwentyFiveEatenAndCapAtTwentyPercent()
+    public void InediblesAreAbsentUntilTwentyFiveEatenAndAreCapped()
     {
         Assert.Equal(0f, Difficulty.ForEaten(24).InedibleChance, precision: 4);
         Assert.True(Difficulty.ForEaten(25).InedibleChance > 0f);
-        Assert.Equal(0.20f, Difficulty.ForEaten(10_000).InedibleChance, precision: 4);
+        Assert.Equal(0.14f, Difficulty.ForEaten(10_000).InedibleChance, precision: 4);
     }
 
     [Fact]

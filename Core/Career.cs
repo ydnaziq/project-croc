@@ -26,22 +26,22 @@ public static class Career
     public static readonly IReadOnlyList<OpponentDef> Ladder = new[]
     {
         new OpponentDef("penguin", "PIP", "penguin",
-            SecondsPerBite: 1.50f, BiteJitter: 0.25f, PointsPerBite: 40,
+            SecondsPerBite: 1.70f, BiteJitter: 0.25f, PointsPerBite: 34,
             PrizeMoney: 25, Taunt: "you look hungry, pal",
             LineLosing: "hey! slow down!", LineWinning: "too easy", LinePanic: "what IS this"),
 
         new OpponentDef("cat", "MOCHI", "cat",
-            SecondsPerBite: 1.30f, BiteJitter: 0.22f, PointsPerBite: 45,
+            SecondsPerBite: 1.45f, BiteJitter: 0.22f, PointsPerBite: 40,
             PrizeMoney: 50, Taunt: "i eat, i nap, i win",
             LineLosing: "unacceptable", LineWinning: "yawn", LinePanic: "hiss!!"),
 
         new OpponentDef("robot", "UNIT-7", "robot",
-            SecondsPerBite: 1.10f, BiteJitter: 0.15f, PointsPerBite: 50,
+            SecondsPerBite: 1.25f, BiteJitter: 0.15f, PointsPerBite: 46,
             PrizeMoney: 100, Taunt: "consumption rate: optimal",
             LineLosing: "recalculating", LineWinning: "as projected", LinePanic: "ERROR ERROR"),
 
         new OpponentDef("slime", "BLORP", "slime",
-            SecondsPerBite: 0.95f, BiteJitter: 0.20f, PointsPerBite: 55,
+            SecondsPerBite: 1.05f, BiteJitter: 0.20f, PointsPerBite: 52,
             PrizeMoney: 200, Taunt: "i am mostly stomach",
             LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE"),
     };
@@ -49,7 +49,7 @@ public static class Career
     // Bouts are short on purpose. A match is a single burst of concentration; past
     // about half a minute the timing stops being exciting and starts being work.
     private static readonly float[] Durations = { 20f, 22f, 24f, 26f };
-    private static readonly int[] DifficultyOffsets = { 0, 12, 26, 40 };
+    private static readonly int[] DifficultyOffsets = { 0, 8, 18, 28 };
 
     public static readonly IReadOnlyList<ShopItem> Shop = new[]
     {

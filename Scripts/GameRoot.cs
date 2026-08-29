@@ -13,7 +13,7 @@ public partial class GameRoot : Node2D
 
     /// <summary>The croc stands in the middle of the portrait screen.</summary>
     public const float JawCenterX = ViewportWidth / 2f;
-    public const float JawHalfWidth = 12f;
+    public const float JawHalfWidth = 17f;
 
     public const float SpawnX = -20f;
     public const float RetireX = ViewportWidth + 12f;
@@ -416,6 +416,17 @@ public partial class GameRoot : Node2D
         var frenzy = _match.Frenzy.Fraction;
         _conveyor.Advance(_match.BeltSpeed, dt);
         _conveyor.SetFrenzy(frenzy);
+
+        // Ask the same zone the judge uses, so what lights up is exactly what scores.
+        var jaw = new JawZone(JawCenterX, JawHalfWidth);
+        var occupied = false;
+        foreach (var item in _match.Items)
+        {
+            if (!jaw.Overlaps(item)) continue;
+            occupied = true;
+            break;
+        }
+        _conveyor.SetZoneOccupied(occupied);
         _frenzy.SetAmount(frenzy);
         _croc.SetGlow(frenzy, _skinTint);
 

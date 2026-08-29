@@ -7,7 +7,7 @@ namespace CrocGame.Core;
 /// </summary>
 public sealed class Frenzy
 {
-    public const int ComboToTrigger = 8;
+    public const int ComboToTrigger = 5;
     public const float DurationSeconds = 6f;
     public const int ScoreMultiplier = 2;
     public const float BeltSpeedMultiplier = 1.4f;

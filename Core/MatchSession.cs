@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace CrocGame.Core;
@@ -45,6 +46,8 @@ public sealed class MatchSession
         _events.Clear();
         if (State.IsOver) return _events;
 
+        if (_grace > 0f) _grace = MathF.Max(0f, _grace - dt);
+
         if (Frenzy.Tick(dt)) _events.Add(new FrenzyEnded());
 
         if (_opponent.Tick(dt)) _events.Add(new OpponentAte(_opponent.Score));
@@ -53,9 +56,11 @@ public sealed class MatchSession
         {
             if (!retired.IsEdible) continue;  // correct play: inedibles should pass
 
+            // Missing food costs the streak and the points, never a strike. Strikes
+            // are for mistakes the player made - biting nothing, or biting a bomb.
             _events.Add(new Passed(retired));
-            AddStrike();
-            if (State.IsOver) return _events;
+            State.BreakCombo();
+            Frenzy.Reset();
         }
 
         var spawned = _director.Tick(dt, State.Eaten + _def.DifficultyOffset);
@@ -75,6 +80,15 @@ public sealed class MatchSession
         return _events;
     }
 
+    /// <summary>
+    /// A bite that lands buys this long of forgiveness. A player who taps twice on one
+    /// item - which is what hands do when a bite feels good - should not be charged a
+    /// strike for the follow-through.
+    /// </summary>
+    public const float ChompGraceSeconds = 0.18f;
+
+    private float _grace;
+
     public IReadOnlyList<GameEvent> Chomp()
     {
         _events.Clear();
@@ -84,6 +98,8 @@ public sealed class MatchSession
 
         if (result.Outcome == ChompOutcome.Air)
         {
+            if (_grace > 0f) return _events;   // follow-through of a bite that landed
+
             _events.Add(new ChompedAir());
             AddStrike();
             return _events;
@@ -98,6 +114,8 @@ public sealed class MatchSession
             AddStrike();
             return _events;
         }
+
+        _grace = ChompGraceSeconds;
 
         var wasFrenzied = Frenzy.IsActive;
         var points = State.RegisterHit(item.Score, Frenzy.Multiplier);

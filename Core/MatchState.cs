@@ -60,6 +60,13 @@ public sealed class MatchState
         if (Strikes >= MaxStrikes) Result = MatchResult.Disqualified;
     }
 
+    /// <summary>
+    /// Costs the player their streak without costing a strike. Food riding past is a
+    /// missed opportunity in a scoring race, not a foul: the belt should never be able
+    /// to disqualify someone who is playing correctly.
+    /// </summary>
+    public void BreakCombo() => Combo = 0;
+
     public void Settle(int opponentScore) =>
         Result = Score > opponentScore ? MatchResult.Won : MatchResult.Lost;
 }

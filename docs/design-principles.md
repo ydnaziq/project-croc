@@ -47,6 +47,19 @@ it is legible.
 
 ## Game mechanics
 
+**Show the window.** The bite zone is drawn on the belt from the same constants the
+judge uses, and lights up when something is inside it. An invisible timing window makes
+a game feel unfair rather than hard, and the player cannot learn from a mistake they
+could not see themselves make.
+
+**Punish mistakes, not the clock.** Food riding past costs the streak and the points,
+never a strike. Strikes are for biting nothing or biting a bomb. If the belt can
+disqualify someone who is playing correctly, difficulty stops being a skill question.
+
+**Forgive the follow-through.** A bite that lands buys 180ms where a second press
+costs nothing. Hands double-tap when a hit feels good; charging for that reads as the
+game being fussy.
+
 **Judge what the player can see.** The timing window is the food's own width against
 the jaw zone - a position overlap, not a hidden tolerance. Nothing may influence
 judging that is not on screen, which is why every movement behaviour is along X only.

@@ -28,8 +28,11 @@ public readonly record struct Difficulty(
         // Belt runs faster than the first pass, and the gap between items varies a
         // lot more. A near-constant gap lets the player fall into a metronome and stop
         // reacting - the timing has to be read off the food, not off a rhythm.
-        var speed = Lerp(55f, 260f, e / 60f);
-        var spacingMin = Lerp(0.72f, 0.22f, e / 60f);
+        // Opens slower and takes longer to reach the ceiling. The first bites of a
+        // match are where the player finds the timing; starting near the cap means
+        // they never do.
+        var speed = Lerp(45f, 215f, e / 75f);
+        var spacingMin = Lerp(0.85f, 0.30f, e / 75f);
         var jitter = Lerp(0.35f, 0.85f, e / 40f);
 
         return new Difficulty(
@@ -38,7 +41,7 @@ public readonly record struct Difficulty(
             SpacingMax: spacingMin * (1f + jitter),
             StutterWeight: e < 15 ? 0f : Lerp(0.15f, 0.45f, (e - 15f) / 45f),
             BounceWeight: e < 30 ? 0f : Lerp(0.10f, 0.35f, (e - 30f) / 40f),
-            InedibleChance: e < 25 ? 0f : Lerp(0.04f, 0.20f, (e - 25f) / 45f),
+            InedibleChance: e < 25 ? 0f : Lerp(0.03f, 0.14f, (e - 25f) / 55f),
             ClusterChance: e < 8 ? 0f : Lerp(0.08f, 0.22f, (e - 8f) / 45f));
     }
 

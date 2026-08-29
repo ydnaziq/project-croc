@@ -197,10 +197,12 @@ public class MatchSessionTests
         for (var i = 0; i < Frenzy.ComboToTrigger; i++) EatOne(session);
         Assert.True(session.Frenzy.IsActive);
 
-        // Chomp with nothing in the jaws.
+        // Wait out the follow-through forgiveness, then chomp with nothing in the jaws.
+        for (var i = 0; i < 30; i++) session.Tick(MatchSession.ChompGraceSeconds / 10f);
         while (session.Items.Any(item => Jaw.Overlaps(item))) session.Tick(1f / 60f);
         session.Chomp();
 
+        Assert.Equal(1, session.State.Strikes);
         Assert.False(session.Frenzy.IsActive);
         Assert.Equal(0, session.State.Combo);
     }
@@ -215,6 +217,82 @@ public class MatchSessionTests
 
         Assert.Empty(session.Tick(1f / 60f));
         Assert.Empty(session.Chomp());
+    }
+
+    [Fact]
+    public void LettingFoodPassCostsTheComboButNotAStrike()
+    {
+        var session = Session(duration: 600f, pointsPerBite: 0);
+        Assert.True(EatOne(session), "nothing reached the jaws");
+        Assert.Equal(1, session.State.Combo);
+
+        var events = new List<GameEvent>();
+        for (var i = 0; i < 5_000 && !events.Exists(e => e is Passed); i++)
+        {
+            events.AddRange(session.Tick(1f / 60f));
+        }
+
+        Assert.Contains(events, e => e is Passed);
+        Assert.Equal(0, session.State.Combo);
+        Assert.Equal(0, session.State.Strikes);
+    }
+
+    [Fact]
+    public void DoingNothingAtAllNeverDisqualifies()
+    {
+        // The belt must not be able to end a match on its own. A player who never
+        // presses should lose on score, not be thrown out of the contest.
+        var session = Session(duration: 25f, pointsPerBite: 10);
+
+        for (var i = 0; i < 5_000 && !session.State.IsOver; i++) session.Tick(1f / 60f);
+
+        Assert.Equal(0, session.State.Strikes);
+        Assert.Equal(MatchResult.Lost, session.State.Result);
+    }
+
+    [Fact]
+    public void AMissedItemStillEndsAFrenzy()
+    {
+        var session = Session(duration: 600f, pointsPerBite: 0);
+        for (var i = 0; i < Frenzy.ComboToTrigger; i++) Assert.True(EatOne(session));
+        Assert.True(session.Frenzy.IsActive);
+
+        var events = new List<GameEvent>();
+        for (var i = 0; i < 5_000 && !events.Exists(e => e is Passed); i++)
+        {
+            events.AddRange(session.Tick(1f / 60f));
+        }
+
+        Assert.Contains(events, e => e is Passed);
+        Assert.False(session.Frenzy.IsActive);
+    }
+
+    [Fact]
+    public void AFollowThroughTapRightAfterABiteIsForgiven()
+    {
+        var session = Session(duration: 600f, pointsPerBite: 0);
+        Assert.True(EatOne(session));
+
+        // Second press lands on nothing, immediately after a bite that connected.
+        var events = session.Chomp();
+
+        Assert.Empty(events);
+        Assert.Equal(0, session.State.Strikes);
+    }
+
+    [Fact]
+    public void TheForgivenessWindowExpires()
+    {
+        var session = Session(duration: 600f, pointsPerBite: 0);
+        Assert.True(EatOne(session));
+
+        for (var i = 0; i < 30; i++) session.Tick(MatchSession.ChompGraceSeconds / 10f);
+
+        // Well past the window: clear the jaws, then press at nothing.
+        while (session.Items.Any(item => Jaw.Overlaps(item))) session.Tick(1f / 60f);
+        session.Chomp();
+
+        Assert.Equal(1, session.State.Strikes);
     }
 
     [Fact]
