@@ -60,6 +60,7 @@ public partial class GameRoot : Node2D
     private ShopScreen _shop = null!;
     private DialogueScene _dialogue = null!;
     private Sfx _sfx = null!;
+    private MusicPlayer _music = null!;
 
     private Phase _phase = Phase.Title;
     private bool _chompQueued;
@@ -100,6 +101,9 @@ public partial class GameRoot : Node2D
 
         _sfx = new Sfx();
         AddChild(_sfx);
+
+        _music = new MusicPlayer();
+        AddChild(_music);
 
         _world = new Node2D();
         AddChild(_world);
@@ -224,6 +228,7 @@ public partial class GameRoot : Node2D
         _clutchBarked = false;
 
         _sfx.Play(Sfx.Blip);
+        _music.Duck(true);
 
         // The croc never speaks in words - he is starving, not chatty - so his half of
         // the exchange is body language. It still gives him a turn in the frame.
@@ -294,7 +299,9 @@ public partial class GameRoot : Node2D
 
         if (_countdown > 0f) return;
 
+        _music.Duck(false);
         _overlay.Flash("EAT!");
+        _croc.Anticipate();
         _croc.PlayTaunt();
         _sfx.Play(Sfx.Frenzy);
         _zoom = 1f;
@@ -361,6 +368,7 @@ public partial class GameRoot : Node2D
         if (_bout is null || !_bout.AwaitingInterlude) return;   // the last phase ends the bout
 
         _phase = Phase.Interlude;
+        _music.Duck(true);
         _belt.Clear();
         _hud.Visible = false;
         _dialogueWasInterlude = true;
@@ -385,6 +393,7 @@ public partial class GameRoot : Node2D
     private void OpenShop()
     {
         _phase = Phase.Shop;
+        _music.Duck(true);
         _hud.Visible = false;
         _overlay.Hide();
         _shop.Open(_save);
@@ -436,7 +445,13 @@ public partial class GameRoot : Node2D
         switch (_phase)
         {
             case Phase.Title:
-                if (TakeChomp()) { _sfx.Play(Sfx.Blip); _overlay.Hide(); StartIntro(); }
+                if (TakeChomp())
+                {
+                    _music.Begin();
+                    _sfx.Play(Sfx.Blip);
+                    _overlay.Hide();
+                    StartIntro();
+                }
                 return;
 
             case Phase.Intro:
@@ -536,6 +551,7 @@ public partial class GameRoot : Node2D
         _frenzy.SetAmount(frenzy);
         _croc.SetGlow(frenzy);
 
+        _belt.BeltSpeed = phase.BeltSpeed;
         _belt.Sync(phase.Items);
         _belt.PruneMissing(phase.Items);
         _hud.Update(phase.State, _bout.OpponentScore, frenzy, _save.Money);
@@ -604,6 +620,8 @@ public partial class GameRoot : Node2D
                     _rival.Ate(ate.OpponentScore);
                     break;
                 case FrenzyStarted:
+                    _music.SetFrenzy(true);
+                    _croc.Anticipate();
                     CrowdCheer(lift: 0.40f, spike: 0.9f, pitch: 1.05f);
                     _sfx.Play(Sfx.Frenzy);
                     _shake = 3f;
@@ -613,11 +631,15 @@ public partial class GameRoot : Node2D
                     _rival.Panic(RivalLine(r => r.LinePanic));
                     _barkCooldown = BarkCooldown;
                     break;
+                case FrenzyEnded:
+                    _music.SetFrenzy(false);
+                    break;
                 case StrikeAdded:
                     OnStrike();
                     CrowdCommiserate(0.30f);
                     break;
                 case PhaseStarted started:
+                    _music.SetFrenzy(false);
                     _crowd.ResetForPhase();
                     _lastCheeredCombo = 0;
                     _overlay.Flash(started.Phase.Name);

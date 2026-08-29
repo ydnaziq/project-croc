@@ -12,6 +12,12 @@ public partial class BeltView : Node2D
     private readonly Dictionary<int, float> _ages = new();
     private readonly Dictionary<int, Label> _coinLabels = new();
 
+    /// <summary>Seconds an item spends settling after it appears.</summary>
+    private const float LandingSeconds = 0.2f;
+
+    /// <summary>Belt speed this frame, so the tumble can be tied to it.</summary>
+    public float BeltSpeed { get; set; } = 120f;
+
     public void Sync(IReadOnlyList<FoodItem> items)
     {
         foreach (var item in items)
@@ -24,7 +30,13 @@ public partial class BeltView : Node2D
                 _ages[item.Id] = 0f;
             }
 
-            sprite.Position = new Vector2(item.X, GameRoot.BeltY);
+            // Rolling, not sliding. Tying the tumble to belt speed makes a fast belt
+            // look fast even in a still frame. Whole pixels only: a sprite on a
+            // fractional pixel resamples and loses its outline.
+            var settle = Mathf.Clamp(item.Age / LandingSeconds, 0f, 1f);
+            var hop = (1f - settle) * Mathf.Sin(settle * Mathf.Pi) * 5f;
+
+            sprite.Position = new Vector2(Mathf.Round(item.X), Mathf.Round(GameRoot.BeltY - hop));
 
             // Pop in over the first fraction of a second, and give the golden bite a
             // constant shimmer so the rare item announces itself on the belt.
@@ -32,6 +44,13 @@ public partial class BeltView : Node2D
             var pop = Mathf.Min(1f, age * 8f);
             var overshoot = 1f + 0.35f * Mathf.Sin(pop * Mathf.Pi);
             sprite.Scale = Vector2.One * pop * overshoot;
+
+            // Food tumbles as it rides; buffs and the coin stay upright so they read
+            // as objects rather than more food going past.
+            if (item.Power == "")
+            {
+                sprite.Rotation = item.X / 16f * (BeltSpeed / 120f) * 0.30f;
+            }
 
             if (item.Power == "coin")
             {

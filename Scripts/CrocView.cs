@@ -59,6 +59,12 @@ public partial class CrocView : AnimatedSprite2D
     private float _punch;
     private const float BaseScale = 2f;
 
+    private int _biteCount;
+    private float _lean;
+    private float _leanTarget;
+    private float _idleAge;
+    private Vector2 _restPosition;
+
     /// <summary>
     /// Squash and stretch on a bite. A sprite that only swaps animation frames reads as
     /// a flipbook; a sprite that deforms reads as something with weight behind it.
@@ -67,13 +73,22 @@ public partial class CrocView : AnimatedSprite2D
 
     public override void _Process(double delta)
     {
+        var dt = (float)delta;
+
+        // The lean eases back to square on its own, so the tilt is a moment rather
+        // than a pose the croc gets stuck in.
+        _leanTarget = Mathf.MoveToward(_leanTarget, 0f, dt * 0.35f);
+        _lean = Mathf.Lerp(_lean, _leanTarget, dt * 12f);
+        Rotation = _lean;
+
         if (_punch <= 0f)
         {
             if (Scale != Vector2.One * BaseScale) Scale = Vector2.One * BaseScale;
+            DriftWhileIdle(dt);
             return;
         }
 
-        _punch = Mathf.Max(0f, _punch - (float)delta * 6f);
+        _punch = Mathf.Max(0f, _punch - dt * 6f);
 
         // Wide and short at the moment of the bite, easing back to square.
         Scale = new Vector2(
@@ -81,9 +96,33 @@ public partial class CrocView : AnimatedSprite2D
             BaseScale * (1f - 0.22f * _punch));
     }
 
+    /// <summary>
+    /// A sprite that holds perfectly still between events reads as a paused game. One
+    /// pixel of drift is enough - and it has to be a whole pixel, or the croc leaves
+    /// the grid and the 1px outline this whole project is built on goes soft.
+    /// </summary>
+    private void DriftWhileIdle(float dt)
+    {
+        if (_restPosition == Vector2.Zero) _restPosition = Position;
+
+        _idleAge += dt;
+        Position = _restPosition + new Vector2(0f, Mathf.Round(Mathf.Sin(_idleAge * 2.1f)));
+    }
+
+    /// <summary>
+    /// Crouch before a speed change. A belt that jumps to a new speed reads as a
+    /// glitch; one that is led into reads as a gear change.
+    /// </summary>
+    public void Anticipate() => _punch = Mathf.Max(_punch, 0.45f);
+
     public void PlayEat()
     {
         if (_magnet) return;   // the jaws are being held open
+
+        // Alternating lead, so twenty bites in a row are not twenty identical events.
+        // Feedback that repeats exactly stops registering as feedback at all.
+        _biteCount++;
+        _leanTarget = (_biteCount % 2 == 0 ? 1f : -1f) * 0.07f;
 
         Play("eat");
     }
