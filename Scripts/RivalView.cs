@@ -91,6 +91,8 @@ public partial class RivalView : Node2D
 
         // Never interrupt a reaction with a chew; the reaction is the point.
         if (_sprite is not null && _sprite.Animation != "celebrate") _sprite.Play("eat");
+
+        _biteFlash = 1f;
     }
 
     /// <summary>The rival gloats, with the animation to match.</summary>
@@ -121,6 +123,7 @@ public partial class RivalView : Node2D
 
     private Bark? _bark;
     private float _panicShake;
+    private float _biteFlash;
 
     public override void _Process(double delta)
     {
@@ -128,6 +131,15 @@ public partial class RivalView : Node2D
         {
             _panicShake = Mathf.Max(0f, _panicShake - (float)delta * 1.6f);
             _sprite.Position = new Vector2(Mathf.Sin(_panicShake * 60f) * 2f * _panicShake, 0f);
+        }
+
+        if (_biteFlash > 0f && _sprite is not null)
+        {
+            // A brief white-out on the rival's sprite, so their scoring is visible in
+            // peripheral vision while the player is watching the belt.
+            _biteFlash = Mathf.Max(0f, _biteFlash - (float)delta * 7f);
+            var f = _biteFlash;
+            _sprite.Modulate = new Color(1f + f, 1f + f * 0.8f, 1f + f * 0.8f, 1f);
         }
 
         if (_bitePulse <= 0f) return;

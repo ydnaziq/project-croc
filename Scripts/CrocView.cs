@@ -28,7 +28,7 @@ public partial class CrocView : AnimatedSprite2D
 
         // The croc is the star of the screen and was far too small at 1:1 on a
         // 180px-wide canvas. Integer scale keeps every pixel square.
-        Scale = new Vector2(2, 2);
+        Scale = Vector2.One * BaseScale;
 
         AnimationFinished += () => Play("idle");
         Play("idle");
@@ -50,6 +50,31 @@ public partial class CrocView : AnimatedSprite2D
                 Region = new Rect2((first + i) * 32, 0, 32, 32),
             });
         }
+    }
+
+    private float _punch;
+    private const float BaseScale = 2f;
+
+    /// <summary>
+    /// Squash and stretch on a bite. A sprite that only swaps animation frames reads as
+    /// a flipbook; a sprite that deforms reads as something with weight behind it.
+    /// </summary>
+    public void Punch(float amount = 1f) => _punch = Mathf.Max(_punch, amount);
+
+    public override void _Process(double delta)
+    {
+        if (_punch <= 0f)
+        {
+            if (Scale != Vector2.One * BaseScale) Scale = Vector2.One * BaseScale;
+            return;
+        }
+
+        _punch = Mathf.Max(0f, _punch - (float)delta * 6f);
+
+        // Wide and short at the moment of the bite, easing back to square.
+        Scale = new Vector2(
+            BaseScale * (1f + 0.28f * _punch),
+            BaseScale * (1f - 0.22f * _punch));
     }
 
     public void PlayEat() => Play("eat");

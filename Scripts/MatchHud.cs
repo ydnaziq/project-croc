@@ -31,6 +31,11 @@ public partial class MatchHud : Node2D
     private float _frenzyFraction;
     private int _strikes;
     private float _comboPulse;
+    private StrikeMeter _teeth = null!;
+    private float _leadFlash;
+    private bool _wasAhead = true;
+    private float _knobBob;
+    private bool _timeLow;
 
     public override void _Ready()
     {
@@ -40,6 +45,9 @@ public partial class MatchHud : Node2D
         _playerScore = MakeLabel(new Vector2(0, GameRoot.BeltY + 42), Ui.Body, Ui.Green, HorizontalAlignment.Center);
         _combo = MakeLabel(new Vector2(0, GameRoot.BeltY + 62), Ui.Small, Ui.Gold, HorizontalAlignment.Center);
         _money = MakeLabel(new Vector2(-6, 8), Ui.Small, Ui.Gold, HorizontalAlignment.Right);
+
+        _teeth = new StrikeMeter { Position = new Vector2(8, GameRoot.ViewportHeight - 24) };
+        AddChild(_teeth);
     }
 
     private Label MakeLabel(Vector2 position, int size, Color color, HorizontalAlignment align)
@@ -59,14 +67,24 @@ public partial class MatchHud : Node2D
     {
         _clock.Text = Mathf.CeilToInt(state.TimeRemaining).ToString();
         _clock.LabelSettings.FontColor = state.TimeRemaining <= 5f ? Ui.Red : Ui.Paper;
+        _timeLow = state.TimeRemaining <= 5f;
 
         _playerScore.Text = state.Score.ToString();
         _money.Text = $"${money}";
         _strikes = state.Strikes;
+        _teeth.SetStrikes(state.Strikes);
         _frenzyFraction = frenzyFraction;
 
         var total = state.Score + rivalScore;
-        _targetShare = total <= 0 ? 0.5f : (float)state.Score / total;
+        var raw = total <= 0 ? 0.5f : (float)state.Score / total;
+
+        // Never let either side vanish completely. A bar pinned hard to one end stops
+        // carrying information and just looks broken.
+        _targetShare = Mathf.Clamp(raw, 0.06f, 0.94f);
+
+        var ahead = state.Score >= rivalScore;
+        if (ahead != _wasAhead) _leadFlash = 1f;
+        _wasAhead = ahead;
 
         if (state.Combo >= 2)
         {
@@ -83,12 +101,37 @@ public partial class MatchHud : Node2D
 
     public void PulseCombo() => _comboPulse = 1f;
 
+    public void ResetForNewMatch()
+    {
+        _teeth.Reset();
+        _playerShare = 0.5f;
+        _targetShare = 0.5f;
+        _wasAhead = true;
+        _leadFlash = 0f;
+    }
+
     public override void _Process(double delta)
     {
         var dt = (float)delta;
 
         // The bar eases toward the true share so it reads as momentum swinging.
         _playerShare = Mathf.Lerp(_playerShare, _targetShare, 1f - Mathf.Exp(-8f * dt));
+        _leadFlash = Mathf.Max(0f, _leadFlash - dt * 2f);
+        _knobBob += dt;
+
+        // The clock beats once a second in the closing five, which is felt before it
+        // is read.
+        if (_timeLow)
+        {
+            var beat = Mathf.Abs(Mathf.Sin(_knobBob * Mathf.Pi));
+            _clock.Scale = Vector2.One * (1f + 0.35f * beat);
+            _clock.Position = new Vector2(-GameRoot.ViewportWidth * (_clock.Scale.X - 1f) / 2f, 6);
+        }
+        else if (_clock.Scale != Vector2.One)
+        {
+            _clock.Scale = Vector2.One;
+            _clock.Position = new Vector2(0, 6);
+        }
 
         if (_comboPulse > 0f)
         {
@@ -117,17 +160,25 @@ public partial class MatchHud : Node2D
         // A tick at the halfway mark: the line you are trying to stay right of.
         DrawRect(new Rect2(bar.Position.X + 1 + inner / 2f, BarY - 1, 1, BarHeight + 2), FrameColor);
 
+        // A knob riding the boundary, so the eye has something to track as the lead
+        // moves rather than watching a colour edge slide.
+        var knobX = bar.Position.X + 1f + playerWidth;
+        var bob = Mathf.Sin(_knobBob * 8f) * (_leadFlash > 0f ? 1.5f : 0f);
+        Ui.Panel(this, new Rect2(knobX - 3f, BarY - 3f + bob, 6f, BarHeight + 6f),
+                 _playerShare >= 0.5f ? PlayerColor : RivalColor);
+
+        // The whole bar flares white the instant the lead changes hands.
+        if (_leadFlash > 0f)
+        {
+            DrawRect(bar, new Color(1f, 1f, 1f, _leadFlash * 0.5f));
+        }
+
         if (_frenzyFraction > 0f)
         {
             Ui.Meter(this, new Rect2(6, FrenzyBarY - 1, w - 12, 5f), _frenzyFraction,
                      FrenzyColor, new Color("2a2a3a"));
         }
 
-        // Strike pips, bottom left: filled means spent.
-        for (var i = 0; i < MatchState.MaxStrikes; i++)
-        {
-            Ui.Panel(this, new Rect2(6 + i * 10, GameRoot.ViewportHeight - 14, 8, 8),
-                     i < _strikes ? Ui.Red : new Color("585858"));
-        }
+        // Strikes are drawn by the StrikeMeter child, not here.
     }
 }

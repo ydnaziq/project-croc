@@ -35,7 +35,10 @@ public partial class GameRoot : Node2D
     private const float ShakeDecay = 16f;
     private const float FlashDecay = 4.5f;
 
-    private enum Phase { Title, Intro, Fighting, Result, Shop }
+    private enum Phase { Title, Intro, Countdown, Fighting, Result, Shop }
+
+    /// <summary>Where the world zooms from, so a punch scales about the action.</summary>
+    private static readonly Vector2 ZoomPivot = new(JawCenterX, 190f);
 
     private ISaveStore _saveStore = null!;
     private FoodTable _foodTable = null!;
@@ -62,6 +65,11 @@ public partial class GameRoot : Node2D
     private float _hitStop;
     private float _shake;
     private float _flashAlpha;
+    private float _zoom;
+    private float _goldFlash;
+    private ColorRect _gold = null!;
+    private float _countdown;
+    private int _countdownShown = -1;
 
     private readonly RandomNumberGenerator _shakeRng = new();
 
@@ -115,6 +123,16 @@ public partial class GameRoot : Node2D
             ZIndex = 18,
         };
         AddChild(_flash);
+
+        _gold = new ColorRect
+        {
+            Size = new Vector2(ViewportWidth, ViewportHeight),
+            Color = Ui.Gold,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Modulate = Colors.White with { A = 0f },
+            ZIndex = 17,
+        };
+        AddChild(_gold);
 
         _hud = new MatchHud { Visible = false };
         AddChild(_hud);
@@ -210,6 +228,41 @@ public partial class GameRoot : Node2D
     private void OnDialogueFinished()
     {
         _overlay.Hide();
+        _hud.ResetForNewMatch();
+
+        // A beat of anticipation before the bell. Dropping straight from a taunt into
+        // a moving belt gives the player no moment to set their hands.
+        _phase = Phase.Countdown;
+        _countdown = 2.6f;
+        _countdownShown = -1;
+    }
+
+    private void TickCountdown(float dt)
+    {
+        _countdown -= dt;
+
+        var remaining = Mathf.CeilToInt(_countdown);
+
+        if (remaining != _countdownShown)
+        {
+            _countdownShown = remaining;
+
+            if (remaining > 0)
+            {
+                _overlay.Flash(remaining.ToString());
+                _sfx.Play(Sfx.Blip, 0.8f + 0.1f * (3 - remaining));
+            }
+        }
+
+        if (_countdown > 0f) return;
+
+        _overlay.Flash("EAT!");
+        _sfx.Play(Sfx.Frenzy);
+        _zoom = 1f;
+
+        // Drop anything pressed during the countdown. Otherwise an eager player buys a
+        // strike on the first frame of the match for a press they made before the bell.
+        _chompQueued = false;
         _phase = Phase.Fighting;
     }
 
@@ -319,6 +372,10 @@ public partial class GameRoot : Node2D
                 if (TakeChomp()) _dialogue.Advance();
                 return;
 
+            case Phase.Countdown:
+                TickCountdown(dt);
+                return;
+
             case Phase.Result:
                 if (TakeChomp()) OpenShop();
                 return;
@@ -371,22 +428,30 @@ public partial class GameRoot : Node2D
 
     private void DecayEffects(float dt)
     {
-        if (_shake > 0f)
-        {
-            _shake = Mathf.Max(0f, _shake - ShakeDecay * dt);
-            _world.Position = new Vector2(
-                _shakeRng.RandfRange(-_shake, _shake),
-                _shakeRng.RandfRange(-_shake, _shake));
-        }
-        else if (_world.Position != Vector2.Zero)
-        {
-            _world.Position = Vector2.Zero;
-        }
+        if (_shake > 0f) _shake = Mathf.Max(0f, _shake - ShakeDecay * dt);
+        if (_zoom > 0f) _zoom = Mathf.Max(0f, _zoom - dt * 4.5f);
+
+        // Shake and zoom both want the world's transform, so they are resolved
+        // together: scale about a pivot near the jaws, then offset by the shake.
+        // Node2D has no separate offset, so the pivot correction goes into Position.
+        var scale = 1f + 0.05f * _zoom;
+        var offset = _shake > 0f
+            ? new Vector2(_shakeRng.RandfRange(-_shake, _shake), _shakeRng.RandfRange(-_shake, _shake))
+            : Vector2.Zero;
+
+        _world.Scale = Vector2.One * scale;
+        _world.Position = offset + ZoomPivot * (1f - scale);
 
         if (_flashAlpha > 0f)
         {
             _flashAlpha = Mathf.Max(0f, _flashAlpha - FlashDecay * dt);
             _flash.Modulate = Colors.White with { A = _flashAlpha };
+        }
+
+        if (_goldFlash > 0f)
+        {
+            _goldFlash = Mathf.Max(0f, _goldFlash - dt * 3f);
+            _gold.Modulate = Colors.White with { A = _goldFlash * 0.5f };
         }
     }
 
@@ -417,6 +482,8 @@ public partial class GameRoot : Node2D
                 case FrenzyStarted:
                     _sfx.Play(Sfx.Frenzy);
                     _shake = 3f;
+                    _zoom = 1f;
+                    _croc.Punch(1.2f);
                     _overlay.Flash("FRENZY!");
                     _rival.Panic(RivalLine(r => r.LinePanic));
                     _barkCooldown = BarkCooldown;
@@ -433,20 +500,36 @@ public partial class GameRoot : Node2D
 
     private void OnEaten(Chomped chomped)
     {
+        var golden = chomped.Item.TypeId == "golden";
+
         _croc.PlayEat();
+        _croc.Punch(golden ? 1.4f : 0.7f + 0.05f * Math.Min(chomped.Combo, 6));
         _belt.Remove(chomped.Item.Id);
 
-        _hitStop = HitStopSeconds;
-        _shake = Math.Max(_shake, ChompShake + Math.Min(chomped.Combo, 6) * 0.25f);
-        _crumbs.Burst(new Vector2(JawCenterX, BeltY), chomped.DuringFrenzy ? 12 : 8,
-                      chomped.DuringFrenzy ? 1.3f : 1f);
+        _hitStop = golden ? HitStopSeconds * 2.2f : HitStopSeconds;
+        _shake = Math.Max(_shake, ChompShake + Math.Min(chomped.Combo, 6) * 0.25f + (golden ? 3f : 0f));
+        _crumbs.Burst(new Vector2(JawCenterX, BeltY),
+                      golden ? 22 : chomped.DuringFrenzy ? 12 : 8,
+                      golden ? 1.8f : chomped.DuringFrenzy ? 1.3f : 1f);
 
-        _sfx.Play(chomped.Combo >= 4 || chomped.DuringFrenzy ? Sfx.Crunch : Sfx.Chomp,
-                  1f + 0.03f * Math.Min(chomped.Combo, 8));
+        if (golden)
+        {
+            // The rare bite is the one moment worth spending every effect at once.
+            _zoom = 1f;
+            _goldFlash = 0.7f;
+            _sfx.Play(Sfx.Coin);
+            _overlay.Flash("GOLDEN!");
+            _rival.Rattle(RivalLine(r => r.LineLosing));
+        }
+        else
+        {
+            _sfx.Play(chomped.Combo >= 4 || chomped.DuringFrenzy ? Sfx.Crunch : Sfx.Chomp,
+                      1f + 0.03f * Math.Min(chomped.Combo, 8));
+        }
 
         _hud.PulseCombo();
         AddChild(ComboPopup.Create(new Vector2(JawCenterX, BeltY - 22f),
-                                   chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy));
+                                   chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy || golden));
     }
 
     /// <summary>
@@ -501,6 +584,8 @@ public partial class GameRoot : Node2D
     private void OnStrike()
     {
         _shake = StrikeShake;
+        _zoom = 0.6f;
+        _croc.Punch(0.5f);
         _flashAlpha = 0.5f;
         _sfx.Play(Sfx.Strike);
         _frenzy.SetAmount(0f);

@@ -81,6 +81,15 @@ everything, you never chose anything.
 **Show state, don't ask for arithmetic.** The tug-of-war bar tells you who is winning
 at a glance. Two numbers make the player do subtraction while food goes past.
 
+**A meter must read the right way round.** Strikes were three pips that filled red as
+they were spent, so a lit pip looked like something you *had*. Health-shaped UI has to
+show what remains, not what is gone - the teeth are present or knocked out.
+
+**Every state change gets a moment.** Losing a tooth animates, the lead changing flares
+the bar, a rival's bite flashes their sprite, the clock beats in the closing seconds. A
+state change communicated only by a colour swap on a small element will be missed while
+the player is watching the belt.
+
 **Colour before words.** Win cards are green, loss cards red, frenzy popups a different
 colour and size from ordinary ones. The reading is a confirmation, not the message.
 
@@ -107,6 +116,13 @@ used. Any other size resamples and goes soft, which breaks the line-weight rule.
 **Core knows the rules; the scene layer knows how it looks.** `CrocGame.Core` cannot
 reference Godot - the compiler enforces it - so the rules are testable with a fake
 clock and no engine. Feedback lives entirely on the other side of that line.
+
+**Deform, don't just swap frames.** The croc squashes wide on a bite and eases back.
+Animation frames alone read as a flipbook; deformation reads as weight.
+
+**Spend everything on the rare moment.** The golden bite gets a longer hit-stop, a zoom
+punch, a gold wash, a bigger burst, its own sound and a rival reaction all at once.
+Effects that fire constantly stop being events.
 
 **Feedback is core, not polish.** Hit-stop, shake, flash, and popups were built with
 the mechanic, not after it. A timing game with no feedback is unfixable by tuning.
