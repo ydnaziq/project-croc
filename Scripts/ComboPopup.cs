@@ -35,8 +35,8 @@ public partial class ComboPopup : Node2D
         _label = new Label
         {
             Text = _text,
-            Position = new Vector2(-45, -9),
-            Size = new Vector2(90, 20),
+            Position = new Vector2(-52f, -9),
+            Size = new Vector2(104f, 20),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = Ui.Text(_fontSize, _tint),
         };

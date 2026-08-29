@@ -25,18 +25,18 @@ public partial class RivalView : Node2D
     {
         _name = new Label
         {
-            Position = new Vector2(0, -48),
-            Size = new Vector2(GameRoot.ViewportWidth, 12),
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Position = new Vector2(-GameRoot.ViewportWidth / 2f + 6f, -48),
+            Size = new Vector2(GameRoot.ViewportWidth / 2f, 14),
+            HorizontalAlignment = HorizontalAlignment.Left,
             LabelSettings = Ui.Text(Ui.Small, Ui.Paper),
         };
         AddChild(_name);
 
         _score = new Label
         {
-            Position = new Vector2(0, 36),
-            Size = new Vector2(GameRoot.ViewportWidth, 18),
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Position = new Vector2(-6f, -50),
+            Size = new Vector2(GameRoot.ViewportWidth / 2f, 18),
+            HorizontalAlignment = HorizontalAlignment.Right,
             LabelSettings = Ui.Text(Ui.Body, Ui.Rival),
         };
         AddChild(_score);
@@ -116,8 +116,9 @@ public partial class RivalView : Node2D
     {
         if (string.IsNullOrWhiteSpace(line)) return;
 
-        _bark?.QueueFree();
-        _bark = Bark.Create(new Vector2(0, -34), line, mood);
+        // The previous bubble may have expired and freed itself already.
+        if (_bark is not null && GodotObject.IsInstanceValid(_bark)) _bark.QueueFree();
+        _bark = Bark.Create(new Vector2(0, 52), line, mood);
         AddChild(_bark);
     }
 
@@ -146,6 +147,6 @@ public partial class RivalView : Node2D
 
         _bitePulse = Mathf.Max(0f, _bitePulse - (float)delta * 5f);
         _score.Scale = Vector2.One * (1f + 0.25f * _bitePulse);
-        _score.Position = new Vector2(-GameRoot.ViewportWidth * (_score.Scale.X - 1f) / 2f, 36);
+        _score.Position = new Vector2(-6f - GameRoot.ViewportWidth / 2f * (_score.Scale.X - 1f), -50);
     }
 }

@@ -14,14 +14,14 @@ namespace CrocGame;
 public partial class ConveyorView : Node2D
 {
     private const float BandTop = GameRoot.BeltY + 8f;   // food's lower edge rests here
-    private const float BandHeight = 16f;
+    private const float BandHeight = 10f;
     private const float TreadSpacing = 12f;
 
     private static readonly Color BandColor = new("2a2a3a");
     private static readonly Color SurfaceColor = new("4a4a5e");
     private static readonly Color TreadColor = new("1a1a26");
     private static readonly Color RimColor = new("6a6a82");
-    private static readonly Color ZoneIdle = new("6a6a82");
+    private static readonly Color ZoneIdle = new("58f8d8");
     private static readonly Color ZoneHot = new("58d854");
 
     private float _scroll;
@@ -54,8 +54,8 @@ public partial class ConveyorView : Node2D
         var width = GameRoot.ViewportWidth;
         var heat = new Color("f83800");
 
-        DrawRect(new Rect2(0, BandTop, width, BandHeight), BandColor.Lerp(heat, _frenzy * 0.5f));
-        DrawRect(new Rect2(0, BandTop, width, 3f), SurfaceColor.Lerp(new Color("f8d878"), _frenzy));
+        DrawRect(new Rect2(0, BandTop, width, BandHeight), BandColor.Lerp(heat, _frenzy * 0.22f));
+        DrawRect(new Rect2(0, BandTop, width, 3f), SurfaceColor.Lerp(new Color("f8d878"), _frenzy * 0.55f));
         DrawLine(new Vector2(0, BandTop), new Vector2(width, BandTop), RimColor);
 
         // Treads scroll with the belt. Start one spacing off-screen left so a tread
@@ -77,24 +77,36 @@ public partial class ConveyorView : Node2D
     {
         var left = GameRoot.JawCenterX - GameRoot.JawHalfWidth;
         var right = GameRoot.JawCenterX + GameRoot.JawHalfWidth;
-        var top = BandTop - 2f;
+
+        // Tall enough to frame the food itself, which sits centred on the belt line.
+        var top = GameRoot.BeltY - 10f;
+        var bottom = BandTop + 3f;
+        var height = bottom - top;
+
         var colour = ZoneIdle.Lerp(ZoneHot, _occupiedGlow);
 
-        // Uprights at the window edges, each backed in black to keep the 1px rule.
-        DrawRect(new Rect2(left - 1f, top - 4f, 1f, 8f), Ui.Ink);
-        DrawRect(new Rect2(right, top - 4f, 1f, 8f), Ui.Ink);
-        DrawRect(new Rect2(left, top - 4f, 1f, 8f), colour);
-        DrawRect(new Rect2(right - 1f, top - 4f, 1f, 8f), colour);
+        // Each post is a bright bar on a black backing. Against the croc's own pale
+        // mouth a dim grey post disappears into the sprite, so this is deliberately
+        // the highest-contrast thing on the belt.
+        DrawRect(new Rect2(left - 2f, top - 1f, 4f, height + 2f), Ui.Ink);
+        DrawRect(new Rect2(right - 2f, top - 1f, 4f, height + 2f), Ui.Ink);
+        DrawRect(new Rect2(left - 1f, top, 2f, height), colour);
+        DrawRect(new Rect2(right - 1f, top, 2f, height), colour);
 
-        // Feet turning inward, so the pair reads as one bracket instead of two posts.
-        DrawRect(new Rect2(left, top - 4f, 3f, 1f), colour);
-        DrawRect(new Rect2(right - 3f, top - 4f, 3f, 1f), colour);
+        // Feet turning inward at top and bottom, so the pair reads as one bracket.
+        foreach (var y in new[] { top, bottom - 2f })
+        {
+            DrawRect(new Rect2(left - 1f, y - 1f, 6f, 4f), Ui.Ink);
+            DrawRect(new Rect2(right - 5f, y - 1f, 6f, 4f), Ui.Ink);
+            DrawRect(new Rect2(left, y, 4f, 2f), colour);
+            DrawRect(new Rect2(right - 4f, y, 4f, 2f), colour);
+        }
 
-        // The floor of the window lights as the item crosses it.
+        // The floor of the window lights as an item crosses it.
         if (_occupiedGlow > 0.01f)
         {
-            DrawRect(new Rect2(left, BandTop, right - left, 2f),
-                     ZoneHot with { A = _occupiedGlow * 0.75f });
+            DrawRect(new Rect2(left + 1f, BandTop, right - left - 2f, 3f),
+                     ZoneHot with { A = _occupiedGlow * 0.85f });
         }
     }
 }

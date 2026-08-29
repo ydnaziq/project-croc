@@ -11,3 +11,6 @@ __pycache__/
 # .NET build output
 bin/
 obj/
+
+# Godot C# build output
+.godot/mono/

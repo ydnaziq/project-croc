@@ -14,6 +14,7 @@ public partial class Bark : Node2D
     public enum Mood { Smug, Rattled, Panicked }
 
     private const float LifeSeconds = 2.0f;
+    private const int MaxCharsPerLine = 22;
 
     private Label _label = null!;
     private float _age;
@@ -29,20 +30,44 @@ public partial class Bark : Node2D
     {
         ZIndex = 22;
 
-        // Measured, not estimated: the bubble is built around the text.
-        const float maxWidth = GameRoot.ViewportWidth - 24f;
-        var measured = Ui.Measure(_text, Ui.Small);
+        // Wrap by hand before building the label. A Godot Label clamps its own Size up
+        // to whatever its content needs, so sizing a panel from a width you *asked*
+        // for is unreliable - the label wins and the text spills out of the bubble.
+        var wrapped = Wrap(_text, MaxCharsPerLine);
 
-        _width = Mathf.Clamp(measured.X + 12f, 40f, maxWidth);
-
-        _label = Ui.WrappedLabel(_text, Ui.Small, TextColor, _width - 10f, HorizontalAlignment.Center);
-        _label.Position = new Vector2(-_width / 2f + 5f, -22f);
+        _label = new Label
+        {
+            Text = wrapped,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = Ui.Text(Ui.Small, TextColor, outline: false),
+        };
         AddChild(_label);
 
-        // Once it is in the tree the label knows how many lines it wrapped to, so the
-        // bubble can grow to fit rather than clipping.
-        _height = Mathf.Max(16f, Ui.WrappedHeight(_label) + 6f);
-        _label.Position = new Vector2(-_width / 2f + 5f, -8f - _height);
+        // Ask the label how big it actually is, then build the bubble around that.
+        var needed = _label.GetCombinedMinimumSize();
+        _width = Mathf.Max(44f, needed.X + 12f);
+        _height = Mathf.Max(16f, needed.Y + 6f);
+
+        _label.Size = needed;
+        _label.Position = new Vector2(-needed.X / 2f, -7f - _height + (_height - needed.Y) / 2f);
+    }
+
+    /// <summary>Breaks a line on word boundaries so a long taunt becomes two rows.</summary>
+    private static string Wrap(string text, int limit)
+    {
+        var words = text.Split(' ');
+        var lines = new System.Collections.Generic.List<string>();
+        var line = "";
+
+        foreach (var word in words)
+        {
+            if (line.Length == 0) line = word;
+            else if (line.Length + 1 + word.Length <= limit) line += " " + word;
+            else { lines.Add(line); line = word; }
+        }
+
+        if (line.Length > 0) lines.Add(line);
+        return string.Join("\n", lines);
     }
 
     private Color TextColor => _mood switch
@@ -73,7 +98,7 @@ public partial class Bark : Node2D
         if (_mood == Mood.Panicked)
         {
             var shake = Mathf.Sin(_age * 40f) * 1f;
-            _label.Position = new Vector2(-_width / 2f + 5f + shake, -8f - _height);
+            _label.Position = _label.Position with { X = -_label.Size.X / 2f + shake };
         }
 
         Modulate = Colors.White with { A = _age > LifeSeconds - 0.35f ? (LifeSeconds - _age) / 0.35f : 1f };

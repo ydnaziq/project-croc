@@ -87,7 +87,9 @@ public partial class CrocView : AnimatedSprite2D
     /// </summary>
     public void SetGlow(float amount, Color skinTint)
     {
-        var glow = 1f + 0.9f * amount;
+        // Gentle: a strong multiply blows the sprite out to pale green and costs
+        // the black outline that holds the pixel art together.
+        var glow = 1f + 0.3f * amount;
         Modulate = new Color(skinTint.R * glow, skinTint.G * glow, skinTint.B * glow, skinTint.A);
     }
 }

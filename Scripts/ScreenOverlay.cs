@@ -47,8 +47,8 @@ public partial class ScreenOverlay : Node2D
 
         _banner = new Label
         {
-            Position = new Vector2(0, 96),
-            Size = new Vector2(GameRoot.ViewportWidth, 30),
+            Position = new Vector2(0, 140),
+            Size = new Vector2(GameRoot.ViewportWidth, 34),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = Ui.Text(Ui.Title, Ui.Gold),
             Visible = false,
@@ -111,9 +111,13 @@ public partial class ScreenOverlay : Node2D
             return;
         }
 
+        // Overshoot down to full size rather than growing up from small: a banner
+        // that spends its life under 1.0 just reads as low-resolution.
         var pop = _bannerAge < 0.12f ? _bannerAge / 0.12f : 1f;
-        _banner.Scale = Vector2.One * (0.6f + 0.4f * pop);
-        _banner.Position = new Vector2(-GameRoot.ViewportWidth * (_banner.Scale.X - 1f) / 2f, 96);
+        var scale = 1f + 0.5f * (1f - pop);
+        _banner.Scale = Vector2.One * scale;
+        _banner.Position = new Vector2(-GameRoot.ViewportWidth * (scale - 1f) / 2f,
+                                       140f - 17f * (scale - 1f));
         _banner.Modulate = Colors.White with { A = _bannerAge > 0.8f ? 1f - (_bannerAge - 0.8f) / 0.3f : 1f };
     }
 

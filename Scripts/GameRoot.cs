@@ -151,6 +151,9 @@ public partial class GameRoot : Node2D
 
         ApplySkin();
         ShowTitle();
+
+        var autoPlay = AutoPlay.TryCreate(this);
+        if (autoPlay is not null) AddChild(autoPlay);
     }
 
     private static FoodTable LoadFoodTable()
@@ -232,6 +235,10 @@ public partial class GameRoot : Node2D
 
         // A beat of anticipation before the bell. Dropping straight from a taunt into
         // a moving belt gives the player no moment to set their hands.
+        // Prime the HUD so the clock shows the full match length during the countdown
+        // instead of sitting blank until the first frame of play.
+        if (_match is not null) _hud.Update(_match.State, 0, 0f, _save.Money);
+
         _phase = Phase.Countdown;
         _countdown = 2.6f;
         _countdownShown = -1;
@@ -387,6 +394,31 @@ public partial class GameRoot : Node2D
         Fight(dt);
     }
 
+    // ---------------------------------------------------------------- autoplay
+    // Narrow hooks for the --autoplay smoke test. They expose only what a player
+    // could see and do, so the harness cannot pass a test the real game would fail.
+
+    /// <summary>True while a match is actually running.</summary>
+    public bool AutoPlayInMatch => _phase == Phase.Fighting;
+
+    /// <summary>Whether a competent player would press right now.</summary>
+    public bool AutoPlayShouldPress()
+    {
+        if (_phase != Phase.Fighting) return true;   // every other screen wants a press
+        if (_match is null) return false;
+
+        var jaw = new JawZone(JawCenterX, JawHalfWidth);
+        foreach (var item in _match.Items)
+        {
+            // Bite edible food on sight; leave hazards alone, as a player should.
+            if (item.IsEdible && jaw.Overlaps(item)) return true;
+        }
+
+        return false;
+    }
+
+    public void AutoPlayPress() => _chompQueued = true;
+
     private bool TakeChomp()
     {
         if (!_chompQueued) return false;
@@ -539,7 +571,7 @@ public partial class GameRoot : Node2D
         }
 
         _hud.PulseCombo();
-        AddChild(ComboPopup.Create(new Vector2(JawCenterX, BeltY - 22f),
+        AddChild(ComboPopup.Create(new Vector2(JawCenterX + 28f, BeltY - 34f),
                                    chomped.ScoreAwarded, chomped.Combo, chomped.DuringFrenzy || golden));
     }
 
