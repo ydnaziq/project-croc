@@ -46,6 +46,23 @@ public static class Career
             LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE"),
     };
 
+    /// <summary>
+    /// The three acts every bout runs through. PLAIN teaches the rival's pace on a
+    /// clean belt, HAZARD introduces everything that can go wrong, and FEAST is worth
+    /// double so a bout lost in the first two acts is still winnable in the third.
+    /// </summary>
+    public static readonly IReadOnlyList<PhaseDef> Phases = new[]
+    {
+        new PhaseDef("PLAIN",  8f,  DifficultyOffset: 0,  ScoreMultiplier: 1,
+                     HazardScale: 0f,   PowerUpsEnabled: false, CoinIntervalSeconds: 0f),
+
+        new PhaseDef("HAZARD", 9f,  DifficultyOffset: 12, ScoreMultiplier: 1,
+                     HazardScale: 1f,   PowerUpsEnabled: true,  CoinIntervalSeconds: 4.5f),
+
+        new PhaseDef("FEAST",  10f, DifficultyOffset: 24, ScoreMultiplier: 2,
+                     HazardScale: 1.3f, PowerUpsEnabled: true,  CoinIntervalSeconds: 3f),
+    };
+
     // Bouts are short on purpose. A match is a single burst of concentration; past
     // about half a minute the timing stops being exciting and starts being work.
     private static readonly float[] Durations = { 20f, 22f, 24f, 26f };
