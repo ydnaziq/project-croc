@@ -22,7 +22,7 @@ public class SpawnDirectorTests
         var spawned = new List<FoodItem>();
         for (var t = 0f; t < seconds; t += dt)
         {
-            var item = director.Tick(dt, eaten);
+            var item = director.Tick(dt, eaten, Career.Phases[1]);
             if (item is not null) spawned.Add(item);
         }
         return spawned;
@@ -30,7 +30,7 @@ public class SpawnDirectorTests
 
     [Fact]
     public void SpawnsNothingOnTheVeryFirstTick() =>
-        Assert.Null(Director().Tick(1f / 60f, eaten: 0));
+        Assert.Null(Director().Tick(1f / 60f, eaten: 0, Career.Phases[1]));
 
     [Fact]
     public void EventuallySpawns() =>
@@ -121,7 +121,7 @@ public class SpawnDirectorTests
         {
             sinceLast += 1f / 60f;
 
-            if (director.Tick(1f / 60f, eaten: 40) is not null)
+            if (director.Tick(1f / 60f, eaten: 40, Career.Phases[1]) is not null)
             {
                 gaps.Add(sinceLast);
                 sinceLast = 0f;
@@ -141,5 +141,110 @@ public class SpawnDirectorTests
         var early = RunFor(Director(seed: 5), seconds: 30f, eaten: 0).Count;
         var late = RunFor(Director(seed: 5), seconds: 30f, eaten: 60).Count;
         Assert.True(late > early, $"expected more spawns when escalated: {early} then {late}");
+    }
+
+    /// <summary>Drains a whole phase's worth of spawns.</summary>
+    private static List<FoodItem> SpawnMany(SpawnDirector director, PhaseDef phase, int eaten, float seconds)
+    {
+        var items = new List<FoodItem>();
+        for (var t = 0f; t < seconds; t += 0.02f)
+        {
+            var item = director.Tick(0.02f, eaten, phase);
+            if (item is not null) items.Add(item);
+        }
+        return items;
+    }
+
+    private static FoodTable ShippedTable() =>
+        FoodTable.FromJson(System.IO.File.ReadAllText(
+            System.IO.Path.Combine(FoodTableTests.RepoRoot(), "Resources", "food.json")));
+
+    [Fact]
+    public void APhaseWithNoHazardScaleNeverSpawnsSomethingInedible()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(7), spawnX: 0f);
+
+        // Eaten is high enough that the difficulty curve would happily produce bombs.
+        var items = SpawnMany(director, Career.Phases[0], eaten: 60, seconds: 60f);
+
+        Assert.NotEmpty(items);
+        Assert.All(items, i => Assert.True(i.IsEdible));
+    }
+
+    [Fact]
+    public void APhaseWithPowerUpsDisabledNeverSpawnsABuff()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(11), spawnX: 0f);
+
+        var items = SpawnMany(director, Career.Phases[0], eaten: 60, seconds: 60f);
+
+        Assert.All(items, i => Assert.Equal("", i.Power));
+    }
+
+    [Fact]
+    public void APhaseWithPowerUpsEnabledEventuallySpawnsEachBuff()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(3), spawnX: 0f);
+
+        var items = SpawnMany(director, Career.Phases[2], eaten: 40, seconds: 400f);
+        var powers = items.Select(i => i.Power).Where(p => p != "").Distinct().ToList();
+
+        Assert.Contains("slow", powers);
+        Assert.Contains("shield", powers);
+        Assert.Contains("magnet", powers);
+        Assert.Contains("goldtooth", powers);
+    }
+
+    [Fact]
+    public void TheStrongestBuffsArriveGuardedByBombs()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(3), spawnX: 0f);
+
+        var items = SpawnMany(director, Career.Phases[2], eaten: 40, seconds: 400f);
+
+        // A gold tooth is always the middle of bomb / tooth / bomb, and shield and
+        // magnet always arrive directly after a bomb. Strength is paid for in what
+        // surrounds it.
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (items[i].Power == "goldtooth")
+            {
+                Assert.True(i >= 1 && i + 1 < items.Count);
+                Assert.False(items[i - 1].IsEdible);
+                Assert.False(items[i + 1].IsEdible);
+            }
+
+            if (items[i].Power is "shield" or "magnet")
+            {
+                Assert.True(i >= 1);
+                Assert.False(items[i - 1].IsEdible);
+            }
+        }
+    }
+
+    [Fact]
+    public void BuffsAreAMinorityOfWhatArrives()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(21), spawnX: 0f);
+
+        var items = SpawnMany(director, Career.Phases[2], eaten: 40, seconds: 400f);
+        var buffs = items.Count(i => i.Power != "");
+
+        // A belt made mostly of power-ups is not a timing game any more.
+        Assert.True(buffs < items.Count / 5, $"{buffs} buffs out of {items.Count} items");
+    }
+
+    [Fact]
+    public void CoinsCarryTheCoinPowerAndAUniqueId()
+    {
+        var director = new SpawnDirector(ShippedTable(), new SeededRandom(5), spawnX: 0f);
+
+        var first = director.MakeCoin(halfWidth: 8f);
+        var second = director.MakeCoin(halfWidth: 8f);
+
+        Assert.Equal("coin", first.TypeId);
+        Assert.Equal("coin", first.Power);
+        Assert.True(first.IsEdible);
+        Assert.NotEqual(first.Id, second.Id);
     }
 }

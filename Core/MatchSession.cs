@@ -63,7 +63,7 @@ public sealed class MatchSession
             Frenzy.Reset();
         }
 
-        var spawned = _director.Tick(dt, State.Eaten + _def.DifficultyOffset);
+        var spawned = _director.Tick(dt, State.Eaten + _def.DifficultyOffset, Career.Phases[1]);
         if (spawned is not null)
         {
             _belt.Add(spawned);
