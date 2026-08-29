@@ -58,6 +58,76 @@ DONUT = dict(
         '..KddddddddddK..', '..KddddddddddK..', '...KKddddddKK...', '.....KKKKKK.....',
     ])
 
+# ------------------------------------------------------------------ power-ups
+# Buffs and the cash-out coin. Two rules they all obey:
+#
+# 1. They must not read as food. Every one carries a hard white glint that none of the
+#    five foods has, because biting a buff expecting points is a bad surprise.
+# 2. The drawn shape must match the hitbox declared in Resources/food.json. The food's
+#    own width *is* the timing window, so a sprite wider or narrower than its hitbox is
+#    the window lying about its size - the one thing this game does not do.
+#
+# Hence: slow fills all 16 columns, shield 14, magnet 10, goldtooth 8, coin 16.
+
+SLOW = dict(   # 16 wide - an hourglass, sand run through to the bottom
+    palette={'K': '#000000', 'W': '#f8f8f8', 'd': '#383870', 'b': '#6878c8', 'y': '#f8d878'},
+    rows=[
+        'KKKKKKKKKKKKKKKK', 'KWWWWWWWWWWWWWWK', 'KddddddddddddddK',
+        '.KbbbbbbbbbbbbK.', '..KbbbbbbbbbbK..', '...KbbbbbbbbK...',
+        '....KbbbbbbK....', '.....KbbbbK.....', '.....KyyyyK.....',
+        '....KyyyyyyK....', '...KyyyyyyyyK...', '..KyyyyyyyyyyK..',
+        '.KyyyyyyyyyyyyK.', 'KddddddddddddddK', 'KWWWWWWWWWWWWWWK',
+        'KKKKKKKKKKKKKKKK',
+    ])
+
+SHIELD = dict(  # 14 wide - one oversized tooth, which is what a spare strike looks like
+    palette={'K': '#000000', 'W': '#f8f8f8', 'S': '#bcbcbc', 's': '#7c7c7c', 'G': '#58d854'},
+    rows=[
+        '................', '.KKKKKKKKKKKKKK.', '.KWWWWWWWWWWWWK.',
+        '.KWGWWWWWWWWWSK.', '.KWWWWWWWWWWWSK.', '.KWWWWWWWWWWWSK.',
+        '.KWWWWWWWWWWWSK.', '.KWWWWWWWWWWWSK.', '.KWWWWWWWWWWWSK.',
+        '.KWWWWWWWWWWWSK.', '.KWWWWWWWWWWSSK.', '.KsWWWWWWWWSSsK.',
+        '..KsWWWWWWSSsK..', '...KKsWWWSsKK...', '.....KKKKKK.....',
+        '................',
+    ])
+
+MAGNET = dict(  # 10 wide - narrow on purpose: it is one of the two hard ones to take
+    palette={'K': '#000000', 'R': '#f83800', 'S': '#bcbcbc', 's': '#7c7c7c', 'W': '#f8f8f8'},
+    rows=[
+        '................', '................', '...KKKKKKKKKK...',
+        '...KRWRRRRRRK...', '...KRRKKKKRRK...', '...KRRK..KRRK...',
+        '...KRRK..KRRK...', '...KRRK..KRRK...', '...KRRK..KRRK...',
+        '...KSSK..KSSK...', '...KSSK..KSSK...', '...KsSK..KSsK...',
+        '...KKKK..KKKK...', '................', '................',
+        '................',
+    ])
+
+GOLDTOOTH = dict(  # 8 wide - the smallest window in the game, and the biggest payout
+    palette={'K': '#000000', 'W': '#f8f8f8', 'y': '#f8d878', 'o': '#f8b838', 'b': '#a84400'},
+    rows=[
+        '................', '................', '....KKKKKKKK....',
+        '....KWyyyyoK....', '....KyyyyyoK....', '....KyyyyyoK....',
+        '....KyyyyyoK....', '....KyyyyooK....', '.....KyyyoK.....',
+        '.....KyyyoK.....', '......KyoK......', '......KboK......',
+        '.......KK.......', '................', '................',
+        '................',
+    ])
+
+COIN = dict(  # 16 wide - flat and plain in the middle, because the pot value is drawn
+              # on top of it and has to stay legible at 8px
+    palette={'K': '#000000', 'W': '#f8f8f8', 'y': '#f8d878', 'o': '#f8b838', 'b': '#a84400'},
+    rows=[
+        '.....KKKKKK.....', '...KKyyyyyyKK...', '..KyyyyyyyyyyK..',
+        '.KyyyyyyyyyyyyK.', '.KyyyyyyyyyyyyK.', 'KyyyyyyyyyyyyyyK',
+        'KyWyyyyyyyyyyyoK', 'KyWyyyyyyyyyyyoK', 'KyyyyyyyyyyyyyoK',
+        'KyyyyyyyyyyyyyoK', 'KyyyyyyyyyyyyooK', '.KyyyyyyyyyyooK.',
+        '.KyyyyyyyyyoooK.', '..KyyyyyyyoooK..', '...KKooooooKK...',
+        '.....KKKKKK.....',
+    ])
+
+POWERS = [('slow', SLOW), ('shield', SHIELD), ('magnet', MAGNET),
+          ('goldtooth', GOLDTOOTH), ('coin', COIN)]
+
 FOOD = [('hotdog', HOTDOG), ('pizza', PIZZA), ('pie', PIE),
         ('burger', BURGER), ('donut', DONUT)]
 
@@ -111,6 +181,15 @@ def main():
                 if rows[y][x] != '.':
                     sheet[y][i * 16 + x] = name[0] + rows[y][x]
         print(f'{name:8s} 5 colours, 16x16')
+
+    # Power-ups are written individually and stay out of food.png: that strip is the
+    # five edible items, and a buff is not one of them.
+    for name, spec in POWERS:
+        rows = check(name, spec)
+        write_png(os.path.join(out, name + '.png'), rows, spec['palette'])
+        width = max((x for r in rows for x in range(16) if r[x] != '.'), default=0) \
+            - min((x for r in rows for x in range(16) if r[x] != '.'), default=0) + 1
+        print(f'{name:10s} 5 colours, {width} of 16 columns used')
 
     write_png(os.path.join(out, 'food.png'), sheet, sheet_pal)
     write_png(os.path.join(out, '_preview_food_8x.png'), sheet, sheet_pal, scale=8)
