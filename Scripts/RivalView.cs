@@ -53,12 +53,16 @@ public partial class RivalView : Node2D
             return;
         }
 
-        // Same layout as the croc: idle 0-3, celebrate 4-11, eat 12-17.
+        // Same layout as the croc: idle 0-3, celebrate 4-11, eat 12-17, flinch 18-20,
+        // gulp 21-24, taunt 25-29.
         var frames = new SpriteFrames();
         frames.RemoveAnimation("default");
         AddAnimation(frames, sheet, "idle", 0, 4, 5f, true);
         AddAnimation(frames, sheet, "celebrate", 4, 8, 12f, false);
         AddAnimation(frames, sheet, "eat", 12, 6, 18f, false);
+        AddAnimation(frames, sheet, "flinch", 18, 3, 14f, false);
+        AddAnimation(frames, sheet, "gulp", 21, 4, 12f, false);
+        AddAnimation(frames, sheet, "taunt", 25, 5, 9f, false);
 
         _sprite = new AnimatedSprite2D { SpriteFrames = frames, Scale = new Vector2(2, 2) };
         _sprite.AnimationFinished += () => _sprite.Play("idle");
@@ -90,7 +94,7 @@ public partial class RivalView : Node2D
         _bitePulse = 1f;
 
         // Never interrupt a reaction with a chew; the reaction is the point.
-        if (_sprite is not null && _sprite.Animation != "celebrate") _sprite.Play("eat");
+        if (_sprite is not null && !IsReacting) _sprite.Play("eat");
 
         _biteFlash = 1f;
     }
@@ -102,14 +106,35 @@ public partial class RivalView : Node2D
         Say(line, Bark.Mood.Smug);
     }
 
-    /// <summary>The rival is losing ground.</summary>
-    public void Rattle(string line) => Say(line, Bark.Mood.Rattled);
+    /// <summary>The rival is losing ground: they flinch rather than just talk.</summary>
+    public void Rattle(string line)
+    {
+        _sprite?.Play("flinch");
+        Say(line, Bark.Mood.Rattled);
+    }
 
     /// <summary>The rival is being demolished.</summary>
     public void Panic(string line)
     {
         _panicShake = 1f;
+        _sprite?.Play("taunt");
         Say(line, Bark.Mood.Panicked);
+    }
+
+    /// <summary>
+    /// True while a reaction is on screen. An ordinary chew must never cut one off -
+    /// the rival is on screen for the whole bout, and the reactions are the only thing
+    /// that makes them an opponent rather than a climbing number.
+    /// </summary>
+    private bool IsReacting
+    {
+        get
+        {
+            if (_sprite is null || !_sprite.IsPlaying()) return false;
+
+            var current = _sprite.Animation.ToString();
+            return current is "celebrate" or "flinch" or "taunt";
+        }
     }
 
     private void Say(string line, Bark.Mood mood)

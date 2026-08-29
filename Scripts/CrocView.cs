@@ -4,7 +4,8 @@ namespace CrocGame;
 
 /// <summary>
 /// The jaws. Frame layout of croc_sheet.png, from croc_sheet.json:
-/// idle 0-3, celebrate 4-11, eat 12-17, all 32x32 in a single row.
+/// idle 0-3, celebrate 4-11, eat 12-17, flinch 18-20, gulp 21-24, taunt 25-29,
+/// all 32x32 in a single row.
 /// </summary>
 public partial class CrocView : AnimatedSprite2D
 {
@@ -23,6 +24,9 @@ public partial class CrocView : AnimatedSprite2D
         AddAnimation(frames, sheet, "idle", first: 0, count: 4, fps: 5f, loop: true);
         AddAnimation(frames, sheet, "celebrate", first: 4, count: 8, fps: 12f, loop: false);
         AddAnimation(frames, sheet, "eat", first: 12, count: 6, fps: 18f, loop: false);
+        AddAnimation(frames, sheet, "flinch", first: 18, count: 3, fps: 14f, loop: false);
+        AddAnimation(frames, sheet, "gulp", first: 21, count: 4, fps: 12f, loop: false);
+        AddAnimation(frames, sheet, "taunt", first: 25, count: 5, fps: 9f, loop: false);
 
         SpriteFrames = frames;
 
@@ -112,6 +116,32 @@ public partial class CrocView : AnimatedSprite2D
     }
 
     public void PlayCelebrate() => Play("celebrate");
+
+    /// <summary>
+    /// A miss. Until now a hit and a miss played the same "eat" animation and were told
+    /// apart only by flash and shake; the sprite itself now says which happened.
+    /// </summary>
+    public void PlayFlinch()
+    {
+        if (_magnet) return;
+
+        Play("flinch");
+    }
+
+    /// <summary>Something went down: a banked pot, or a buff taken.</summary>
+    public void PlayGulp()
+    {
+        if (_magnet) return;
+
+        Play("gulp");
+    }
+
+    public void PlayTaunt()
+    {
+        if (_magnet) return;
+
+        Play("taunt");
+    }
 
     /// <summary>
     /// Frenzy glow. Godot has no cheap per-sprite outline, so the croc is brightened

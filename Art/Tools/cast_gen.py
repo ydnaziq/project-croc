@@ -242,6 +242,12 @@ FEET = {'croc': 26, 'penguin': 27, 'cat': 26, 'robot': 26, 'slime': 20}
 
 POSES = {
     'croc': {
+        'hurt': {6: '.....Kgggggggggg', 7: '.....KgggKKKgggg', 8: '.....Kgggggggggg',
+                 13: '.....KggKKKKKKKK', 14: '.....KggKKKKKKKK', 15: '.....KggKKKKKKKK'},
+        'gulp': {13: '.....KggKKKKKKKK', 14: '.....KggKKKKKKKK', 15: '.....KggKKKKKKKK',
+                 16: '.....Kgggggggggg', 17: '......Kggggggggg'},
+        'grin': {13: '.....KggKKKKKKKK', 14: '.....KggKWKWKWKW', 15: '.....KggKKKKKKKK',
+                 16: '.....Kgggggggggg'},
         'cheer': {6: '.....Kgggggggggg', 8: '.....Kgggggggggg',
                   18: '..KKKKKKKggggggg', 19: '..Kddddddggyyyyy', 20: '..Kddddddggyyyyy',
                   21: '..KKKKgggggyyyyy', 22: '.....Kgggggyyyyy', 23: '.....Kgggggyyyyy',
@@ -251,6 +257,10 @@ POSES = {
                      14: '.....KggKKKKKKKK', 15: '.....Kgggggggggg'},
     },
     'penguin': {
+        'hurt': {7: '......KBBBBWWWWW', 8: '......KBBBBWKKWW',
+                 10: '......KBBBBWWKKK', 11: '......KBBBBWWWKK'},
+        'gulp': {10: '......KBBBBWWWOO', 11: '......KBBBBWWWWO', 12: '......KBBBBWWWWW'},
+        'grin': {9: '......KBBBBWWOOO', 10: '......KBBBBWOOOO', 11: '......KBBBBWWOOO'},
         'cheer': {7: '......KBBBBWWWWW',
                   13: '..KKKKKKKBBWWWWW', 14: '..KbbbbbbBBWWWWW', 15: '..KbbbbbbBBWWWWW',
                   16: '..KKKKBBBBBWWWWW', 17: '.....KBBBBBWWWWW', 18: '.....KBBBBBWWWWW',
@@ -263,6 +273,10 @@ POSES = {
                      10: '......KBBBBWWWOO', 11: '......KBBBBWWOOO', 12: '......KBBBBWWWWW'},
     },
     'cat': {
+        'hurt': {8: '.....KOOOOOOOOOO', 9: '.....KOOOKKOOOOO',
+                 14: '.....KOOOOOWKKWW'},
+        'gulp': {12: '.....KOOOOOWWWWW', 13: '.....KOOOOOWWWWW', 14: '.....KOOOOOWWWWW'},
+        'grin': {13: '.....KOOOOOWKKKK', 14: '.....KOOOOOWKWKW', 15: '.....KOOOOOOOOOO'},
         'cheer': {8: '.....KOOOOOOOOOO',
                   18: '..KKKKKKKOOOOOOO', 19: '..KooooooOOWWWWW', 20: '..KooooooOOWWWWW',
                   21: '..KKKKOOOOOWWWWW', 22: '.....KOOOOOWWWWW', 23: '.....KOOOOOWWWWW',
@@ -271,6 +285,9 @@ POSES = {
         'eat_chew': {8: '.....KOOOOOOOOOO', 13: '.....KOOOOOWKKKK', 14: '.....KOOOOOWWWWW'},
     },
     'robot': {
+        'hurt': {7: '.....KSSKRRRRRRR', 8: '.....KSSKRRKKRRR', 9: '.....KSSKRRRRRRR'},
+        'gulp': {7: '.....KSSKCCCCCCC', 8: '.....KSSKKKKKKKK', 9: '.....KSSKCCCCCCC'},
+        'grin': {10: '.....KSSKCKCKCKC', 14: '.....KSSSKCCCCCC'},
         'cheer': {7: '.....KSSKCCKKCCC',
                   18: '..KKKKKKKSSSSSSS', 19: '..KssssssSSCCCCC', 20: '..KssssssSSCCCCC',
                   21: '..KKKKSSSSSCCCRR', 22: '.....KSSSSSCCCCC', 23: '.....KSSSSSCCCCC',
@@ -279,6 +296,10 @@ POSES = {
         'eat_chew': {12: '.....KSSSKKKKKKK', 14: '.....KSSSKKKKKKK'},
     },
     'slime': {
+        'hurt': {12: '.....KVVVVVVVVVV', 13: '.....KVVVKKKVVVV', 14: '.....KVVVVVVVVVV',
+                 15: '.....KVVVVVVVVVV'},
+        'gulp': {17: '.....KVVVVVVVVVV', 18: '.....KVVVVVVVVVV'},
+        'grin': {17: '.....KVVVVVVKKKK', 18: '.....KVVVVVKKKKK', 19: '.....KVVVVVVKKKK'},
         'cheer': {12: '.....KVVVVVVVVVV', 13: '.....KVVVKKKVVVV', 14: '.....KVVVVVVVVVV',
                   15: '.....KVVVVVVVVVV',
                   17: '.....KVVVVVVKKKK', 18: '.....KVVVVVVKKKK', 19: '.....KVVVVVVVKKK'},
@@ -322,6 +343,9 @@ def animations(name, base):
     cheer = pose(base, p['cheer'])
     chew = pose(base, p['eat_chew'])
     open_ = pose(base, p['eat_open'])
+    hurt = pose(base, p['hurt'])
+    gulp_ = pose(base, p['gulp'])
+    grin = pose(base, p['grin'])
     return [
         ('idle', [(bob(base, feet, dy), 180) for dy in (0, -1, 0, 1)]),
         ('celebrate', [
@@ -332,6 +356,18 @@ def animations(name, base):
         ('eat', [
             (base, 140), (bob(open_, feet, -1), 120), (open_, 120),
             (chew, 120), (bob(chew, feet, 1), 120), (base, 140),
+        ]),
+        # These three append after frame 17 on purpose. Inserting a tag would renumber
+        # every frame after it, and every reader of the sheet indexes by number.
+        ('flinch', [
+            (hop(hurt, 1), 70), (hop(hurt, 2), 110), (hurt, 90),
+        ]),
+        ('gulp', [
+            (gulp_, 90), (bob(gulp_, feet, -1), 110), (bob(gulp_, feet, 1), 110), (base, 120),
+        ]),
+        ('taunt', [
+            (base, 130), (bob(grin, feet, -1), 110), (grin, 150),
+            (bob(grin, feet, 1), 110), (base, 130),
         ]),
     ]
 

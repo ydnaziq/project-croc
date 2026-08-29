@@ -295,6 +295,7 @@ public partial class GameRoot : Node2D
         if (_countdown > 0f) return;
 
         _overlay.Flash("EAT!");
+        _croc.PlayTaunt();
         _sfx.Play(Sfx.Frenzy);
         _zoom = 1f;
 
@@ -590,11 +591,11 @@ public partial class GameRoot : Node2D
                     OnEaten(chomped);
                     break;
                 case Chomped chomped:
-                    _croc.PlayEat();
+                    _croc.PlayFlinch();   // a bomb: the sprite says so, not just the flash
                     _belt.Remove(chomped.Item.Id);
                     break;
                 case ChompedAir:
-                    _croc.PlayEat();
+                    _croc.PlayFlinch();
                     _sfx.Play(Sfx.Whiff);
                     break;
                 case Passed passed:
@@ -654,6 +655,7 @@ public partial class GameRoot : Node2D
                     _overlay.Flash($"-{wiped.Lost}");
                     break;
                 case BuffTaken taken:
+                    _croc.PlayGulp();
                     _crowd.Lift(0.15f);
                     _crowd.Spike(0.4f);
                     _sfx.Play(Sfx.Frenzy, BuffPitch(taken.Kind));
@@ -691,6 +693,7 @@ public partial class GameRoot : Node2D
         _zoom = 1f;
         _hitStop = HitStopSeconds * 2f;
         _croc.Punch(1.4f);
+        _croc.PlayGulp();
         _overlay.Flash($"+{banked.Paid}");
         _crumbs.Burst(new Vector2(JawCenterX, BeltY), 18, 1.6f);
 
