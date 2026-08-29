@@ -67,6 +67,23 @@ The window is not an integer multiple of the 180x320 canvas, so when cropping a 
 compute the scale as `width / 180.0`, not with integer division - rounding it to 3x
 instead of 3.99x samples the wrong rows entirely.
 
+## Regenerating assets
+
+Art and audio are generated and committed as artifacts; nothing is generated at build
+or run time. See `Art/README.md` for the cast, food, power-up and cosmetic pipelines,
+and `Art/Audio/README.md` for the sound effects and the music loop.
+
+    cd Art/Tools
+    python3 cast_gen.py ../ExportedSprites ../RawSprites   # characters, 30 frames each
+    python3 food_gen.py ../ExportedSprites                 # food, power-ups, the coin
+    python3 cosmetic_gen.py ../ExportedSprites/Cosmetics   # what the croc wears
+    python3 arena_gen.py ../ExportedSprites                # the arena, minus the crowd
+    python3 sfx_gen.py /tmp/sfx                            # sound effects, as wav
+
+After changing any of them, re-import before running:
+
+    "$GODOT" --headless --import --path .
+
 ## Tests
 
     dotnet test

@@ -64,7 +64,21 @@ mud. Chomp is 62ms. Only jingles run long.
 painful within a minute, and the player cannot turn you down.
 
 **Pitch carries state.** The chomp climbs with the combo, so a streak is audible before
-it is legible.
+it is legible. The music lifts 6% during a frenzy for the same reason.
+
+**One continuous bed.** The theme starts once and never restarts across screens. Music
+that restarts at every transition tells the player the game is a series of menus.
+
+**The effects always win.** The chomp is information and the music is atmosphere. The
+bed sits at -11dB and ducks to -22dB whenever somebody is talking.
+
+**Check a loop before you loop it.** The supplied theme had 6.5 seconds of silence on
+the end - inaudible in a linear listen, a dead gap every 66 seconds on repeat. Trim to
+the musical end, and keep the original as the source.
+
+**Relative loudness is a playback decision.** Every cue is normalised to the same peak
+by the generator, so it cannot be baked in. `Sfx.Play` takes a `volumeDb`, which is how
+the crowd's cheer is allowed to be louder than its commiseration.
 
 ## Game mechanics
 
@@ -210,6 +224,19 @@ clock and no engine. Feedback lives entirely on the other side of that line.
 
 **Deform, don't just swap frames.** The croc squashes wide on a bite and eases back.
 Animation frames alone read as a flipbook; deformation reads as weight.
+
+**Vary the repeat.** The croc's bite alternates its lead each time, food tumbles at a
+rate tied to belt speed and lands with a bounce, and the idle drifts a pixel. Feedback
+that repeats exactly stops registering as feedback, and a sprite that holds perfectly
+still reads as a paused game.
+
+**Lead into a speed change.** The croc crouches before a frenzy and before the bell. A
+belt that jumps to a new speed reads as a glitch; one that is led into reads as a gear
+change.
+
+**Whole pixels, always.** Every procedural position is rounded before it is assigned.
+A sprite on a fractional pixel resamples, and the 1px outline this project is built on
+goes soft.
 
 **Spend everything on the rare moment.** The golden bite gets a longer hit-stop, a zoom
 punch, a gold wash, a bigger burst, its own sound and a rival reaction all at once.
