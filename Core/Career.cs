@@ -28,22 +28,38 @@ public static class Career
         new OpponentDef("penguin", "PIP", "penguin",
             SecondsPerBite: 1.70f, BiteJitter: 0.25f, PointsPerBite: 34,
             PrizeMoney: 25, Taunt: "you look hungry, pal",
-            LineLosing: "hey! slow down!", LineWinning: "too easy", LinePanic: "what IS this"),
+            LineLosing: "hey! slow down!", LineWinning: "too easy", LinePanic: "what IS this",
+            Interlude1Ahead: "one to me. try harder",
+            Interlude1Behind: "ok. ok. that was a warm-up",
+            Interlude2Ahead: "one more and you go home",
+            Interlude2Behind: "how are you still eating"),
 
         new OpponentDef("cat", "MOCHI", "cat",
             SecondsPerBite: 1.45f, BiteJitter: 0.22f, PointsPerBite: 40,
             PrizeMoney: 50, Taunt: "i eat, i nap, i win",
-            LineLosing: "unacceptable", LineWinning: "yawn", LinePanic: "hiss!!"),
+            LineLosing: "unacceptable", LineWinning: "yawn", LinePanic: "hiss!!",
+            Interlude1Ahead: "i was not even awake for that",
+            Interlude1Behind: "you got lucky. once",
+            Interlude2Ahead: "the last round is my favourite",
+            Interlude2Behind: "fine. no more napping"),
 
         new OpponentDef("robot", "UNIT-7", "robot",
             SecondsPerBite: 1.25f, BiteJitter: 0.15f, PointsPerBite: 46,
             PrizeMoney: 100, Taunt: "consumption rate: optimal",
-            LineLosing: "recalculating", LineWinning: "as projected", LinePanic: "ERROR ERROR"),
+            LineLosing: "recalculating", LineWinning: "as projected", LinePanic: "ERROR ERROR",
+            Interlude1Ahead: "phase one: within tolerance",
+            Interlude1Behind: "anomaly logged. adjusting",
+            Interlude2Ahead: "final phase. outcome certain",
+            Interlude2Behind: "certainty: dropping"),
 
         new OpponentDef("slime", "BLORP", "slime",
             SecondsPerBite: 1.05f, BiteJitter: 0.20f, PointsPerBite: 52,
             PrizeMoney: 200, Taunt: "i am mostly stomach",
-            LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE"),
+            LineLosing: "you have a hole in you", LineWinning: "glorp", LinePanic: "IMPOSSIBLE",
+            Interlude1Ahead: "i have three more stomachs",
+            Interlude1Behind: "glorp?? glorp.",
+            Interlude2Ahead: "the last one is always mine",
+            Interlude2Behind: "i am running out of stomachs"),
     };
 
     /// <summary>
@@ -75,6 +91,12 @@ public static class Career
         new ShopItem("skin_shadow", "MIDNIGHT", 150, "7878b8"),
         new ShopItem("skin_neon", "NEON", 250, "58f8d8"),
     };
+
+    /// <summary>The rival's line for the interlude after the given phase.</summary>
+    public static string InterludeLine(OpponentDef def, int phaseIndex, bool rivalAhead) =>
+        phaseIndex == 0
+            ? rivalAhead ? def.Interlude1Ahead : def.Interlude1Behind
+            : rivalAhead ? def.Interlude2Ahead : def.Interlude2Behind;
 
     /// <summary>How many bouts the croc has won, which is also the next rung's index.</summary>
     public static int Progress(SaveData data) => data.DefeatedIds.Count;

@@ -16,7 +16,15 @@ public sealed record OpponentDef(
     string Taunt,
     string LineLosing = "",
     string LineWinning = "",
-    string LinePanic = "");
+    string LinePanic = "",
+
+    /// <summary>What they say between PLAIN and HAZARD, by who is ahead.</summary>
+    string Interlude1Ahead = "",
+    string Interlude1Behind = "",
+
+    /// <summary>What they say between HAZARD and FEAST, by who is ahead.</summary>
+    string Interlude2Ahead = "",
+    string Interlude2Behind = "");
 
 /// <summary>Accrues an opponent's score over the length of a match.</summary>
 public sealed class OpponentEater

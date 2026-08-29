@@ -154,4 +154,27 @@ public class CareerTests
         Assert.Equal(data.DefeatedIds, restored.DefeatedIds);
         Assert.Equal(data.EquippedSkinId, restored.EquippedSkinId);
     }
+
+    [Fact]
+    public void EveryRivalHasAllFourInterludeLines()
+    {
+        Assert.All(Career.Ladder, def =>
+        {
+            Assert.NotEqual("", def.Interlude1Ahead);
+            Assert.NotEqual("", def.Interlude1Behind);
+            Assert.NotEqual("", def.Interlude2Ahead);
+            Assert.NotEqual("", def.Interlude2Behind);
+        });
+    }
+
+    [Fact]
+    public void TheInterludeLinePicksOnPhaseAndWhoIsAhead()
+    {
+        var def = Career.Ladder[0];
+
+        Assert.Equal(def.Interlude1Ahead, Career.InterludeLine(def, phaseIndex: 0, rivalAhead: true));
+        Assert.Equal(def.Interlude1Behind, Career.InterludeLine(def, phaseIndex: 0, rivalAhead: false));
+        Assert.Equal(def.Interlude2Ahead, Career.InterludeLine(def, phaseIndex: 1, rivalAhead: true));
+        Assert.Equal(def.Interlude2Behind, Career.InterludeLine(def, phaseIndex: 1, rivalAhead: false));
+    }
 }
