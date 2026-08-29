@@ -25,8 +25,44 @@ public sealed record FrenzyStarted : GameEvent;
 
 public sealed record FrenzyEnded : GameEvent;
 
-public sealed record MatchEnded(
-    MatchResult Result,
+/// <summary>How a bout finished. There is no disqualified case: a knockout ends a
+/// phase, never the bout.</summary>
+public enum BoutResult
+{
+    InProgress,
+    Won,
+    Lost,
+}
+
+public sealed record PhaseStarted(int PhaseIndex, PhaseDef Phase) : GameEvent;
+
+/// <summary>A phase reached its bell. Scores are the carried bout totals.</summary>
+public sealed record PhaseEnded(int PhaseIndex, bool KnockedOut, int PlayerScore, int OpponentScore) : GameEvent;
+
+/// <summary>Third strike in a phase. The player is out of this phase, not the bout,
+/// and the rival eats the remaining seconds unopposed.</summary>
+public sealed record PhaseKnockout(int PhaseIndex, float SecondsConceded) : GameEvent;
+
+/// <summary>A cash-out coin is on the belt, carrying what banking it would pay.</summary>
+public sealed record CoinSpawned(FoodItem Item, int Value) : GameEvent;
+
+public sealed record PotBanked(int Amount, int Multiplier, int Paid) : GameEvent;
+
+public sealed record PotWiped(int Lost) : GameEvent;
+
+public sealed record BuffTaken(BuffKind Kind) : GameEvent;
+
+public sealed record BuffExpired(BuffKind Kind) : GameEvent;
+
+/// <summary>The hunger meter is full and about to fire. Fraction is 0..1.</summary>
+public sealed record HungerCharged(float Fraction) : GameEvent;
+
+public sealed record HungerStarted(float JawMultiplier, float Seconds) : GameEvent;
+
+public sealed record HungerEnded : GameEvent;
+
+public sealed record BoutEnded(
+    BoutResult Result,
     int PlayerScore,
     int OpponentScore,
     int Prize,
