@@ -22,6 +22,9 @@ public sealed class Belt
 
     public void Remove(FoodItem item) => _items.Remove(item);
 
+    /// <summary>Clears the belt. A knockout stops the phase dead.</summary>
+    public void Clear() => _items.Clear();
+
     public IReadOnlyList<FoodItem> Advance(float beltSpeed, float dt)
     {
         _retiredThisFrame.Clear();

@@ -6,8 +6,8 @@ namespace CrocGame.Core.Tests;
 
 public class CareerTests
 {
-    private static MatchEnded Win(int prize, int score = 900) =>
-        new(MatchResult.Won, score, 800, prize, BestCombo: 10, Eaten: 30);
+    private static BoutEnded Win(int prize, int score = 900) =>
+        new(BoutResult.Won, score, 800, prize, BestCombo: 10, Eaten: 30);
 
     [Fact]
     public void AFreshSaveFacesTheFirstRungOfTheLadder()
@@ -47,7 +47,7 @@ public class CareerTests
     {
         var data = new SaveData();
 
-        Career.RecordLoss(data, new MatchEnded(MatchResult.Lost, 500, 800, 0, 4, 20));
+        Career.RecordLoss(data, new BoutEnded(BoutResult.Lost, 500, 800, 0, 4, 20));
 
         Assert.Equal(0, data.Money);
         Assert.Equal(0, Career.Progress(data));
@@ -69,7 +69,7 @@ public class CareerTests
     {
         var data = new SaveData { BestScore = 100 };
 
-        Career.RecordLoss(data, new MatchEnded(MatchResult.Lost, 700, 800, 0, 5, 25));
+        Career.RecordLoss(data, new BoutEnded(BoutResult.Lost, 700, 800, 0, 5, 25));
 
         Assert.Equal(700, data.BestScore);
     }

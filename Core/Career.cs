@@ -91,7 +91,7 @@ public static class Career
     }
 
     /// <summary>Records a win and pays out. A repeat win over the same rival pays nothing.</summary>
-    public static void RecordWin(SaveData data, MatchEnded ended)
+    public static void RecordWin(SaveData data, BoutEnded ended)
     {
         var index = Progress(data);
         if (index >= Ladder.Count) return;
@@ -104,7 +104,7 @@ public static class Career
     }
 
     /// <summary>Records a loss. Progress is kept; only the prize is missed.</summary>
-    public static void RecordLoss(SaveData data, MatchEnded ended)
+    public static void RecordLoss(SaveData data, BoutEnded ended)
     {
         data.LifetimeEaten += ended.Eaten;
         if (ended.PlayerScore > data.BestScore) data.BestScore = ended.PlayerScore;
