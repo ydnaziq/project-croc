@@ -77,7 +77,39 @@ public partial class CrocView : AnimatedSprite2D
             BaseScale * (1f - 0.22f * _punch));
     }
 
-    public void PlayEat() => Play("eat");
+    public void PlayEat()
+    {
+        if (_magnet) return;   // the jaws are being held open
+
+        Play("eat");
+    }
+
+    private bool _magnet;
+
+    /// <summary>
+    /// The magnet suspends judging for three bites, so the jaws hold visibly open for
+    /// the duration. The one thing that must never happen is the window quietly lying
+    /// about its size: if the game is taking a bite for the player, they have to be
+    /// able to see it doing that.
+    /// </summary>
+    public void SetMagnet(bool active)
+    {
+        if (_magnet == active) return;
+
+        _magnet = active;
+
+        if (active)
+        {
+            Play("eat");
+            Frame = 2;          // the open-jaw frame
+            SpeedScale = 0f;
+        }
+        else
+        {
+            SpeedScale = 1f;
+            Play("idle");
+        }
+    }
 
     public void PlayCelebrate() => Play("celebrate");
 

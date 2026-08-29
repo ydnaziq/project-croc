@@ -35,7 +35,7 @@ public partial class GameRoot : Node2D
     private const float ShakeDecay = 16f;
     private const float FlashDecay = 4.5f;
 
-    private enum Phase { Title, Intro, Countdown, Fighting, Result, Shop }
+    private enum Phase { Title, Intro, Countdown, Fighting, Interlude, Result, Shop }
 
     /// <summary>Where the world zooms from, so a punch scales about the action.</summary>
     private static readonly Vector2 ZoomPivot = new(JawCenterX, 190f);
@@ -43,7 +43,7 @@ public partial class GameRoot : Node2D
     private ISaveStore _saveStore = null!;
     private FoodTable _foodTable = null!;
     private SaveData _save = new();
-    private MatchSession? _match;
+    private BoutSession? _bout;
 
     private Node2D _world = null!;
     private Backdrop _backdrop = null!;
@@ -80,6 +80,7 @@ public partial class GameRoot : Node2D
     private bool _playerWasAhead;
     private int _lastBarkCombo;
     private bool _clutchBarked;
+    private bool _dialogueWasInterlude;
 
     public override void _Ready()
     {
@@ -194,9 +195,9 @@ public partial class GameRoot : Node2D
             next = Career.NextMatch(_save)!;
         }
 
-        _match = new MatchSession(
+        _bout = new BoutSession(
             _foodTable, new SeededRandom((int)(Time.GetTicksMsec() & 0x7FFFFFFF)),
-            new JawZone(JawCenterX, JawHalfWidth), SpawnX, RetireX, next);
+            new JawZone(JawCenterX, JawHalfWidth), SpawnX, RetireX, next, Career.Phases);
 
         _rival.Setup(next.Opponent);
         _belt.Clear();
@@ -231,13 +232,30 @@ public partial class GameRoot : Node2D
     private void OnDialogueFinished()
     {
         _overlay.Hide();
+
+        if (_dialogueWasInterlude)
+        {
+            // Coming back from an interlude the hands are already set, so the beat
+            // before the bell is shorter than the one before the bout.
+            _dialogueWasInterlude = false;
+            _hud.Visible = true;
+            Render(_bout!.BeginNextPhase());
+
+            _phase = Phase.Countdown;
+            _countdown = 1.6f;
+            _countdownShown = -1;
+            return;
+        }
+
         _hud.ResetForNewMatch();
 
         // A beat of anticipation before the bell. Dropping straight from a taunt into
         // a moving belt gives the player no moment to set their hands.
-        // Prime the HUD so the clock shows the full match length during the countdown
-        // instead of sitting blank until the first frame of play.
-        if (_match is not null) _hud.Update(_match.State, 0, 0f, _save.Money);
+        if (_bout is not null)
+        {
+            Render(_bout.Start());
+            _hud.Update(_bout.Current.State, 0, 0f, _save.Money);
+        }
 
         _phase = Phase.Countdown;
         _countdown = 2.6f;
@@ -279,15 +297,16 @@ public partial class GameRoot : Node2D
         StartIntro();
     }
 
-    private void EndMatch(MatchEnded ended)
+    private void EndBout(BoutEnded ended)
     {
         _phase = Phase.Result;
         _hitStop = 0f;
         _frenzy.SetAmount(0f);
         _conveyor.SetFrenzy(0f);
         _belt.Clear();
+        _hud.Visible = true;
 
-        if (ended.Result == MatchResult.Won)
+        if (ended.Result == BoutResult.Won)
         {
             Career.RecordWin(_save, ended);
             _croc.PlayCelebrate();
@@ -303,17 +322,45 @@ public partial class GameRoot : Node2D
             Career.RecordLoss(_save, ended);
             _sfx.Play(Sfx.Lose);
 
-            var headline = ended.Result == MatchResult.Disqualified ? "DISQUALIFIED" : "BEATEN";
-            var detail = ended.Result == MatchResult.Disqualified
-                ? "three strikes\npress to try again"
-                : $"{ended.PlayerScore} to {ended.OpponentScore}\npress to try again";
-
-            _overlay.Show(headline, detail, Ui.Red);
+            // There is no disqualification any more: a knockout costs a phase, and the
+            // bout is always decided on points at the bell.
+            _overlay.Show("BEATEN",
+                $"{ended.PlayerScore} to {ended.OpponentScore}\npress to try again", Ui.Red);
         }
 
         _saveStore.Save(_save);
         ApplySkin();
     }
+
+    /// <summary>
+    /// The valley between two phases. The belt is empty, the rival says something about
+    /// how it is going, and the player gets their hands back before the next act.
+    /// </summary>
+    private void StartInterlude(PhaseEnded ended)
+    {
+        if (_bout is null || !_bout.AwaitingInterlude) return;   // the last phase ends the bout
+
+        _phase = Phase.Interlude;
+        _belt.Clear();
+        _hud.Visible = false;
+        _dialogueWasInterlude = true;
+        _sfx.Play(Sfx.Blip);
+
+        var def = _bout.Def.Opponent;
+        var rivalAhead = ended.OpponentScore > ended.PlayerScore;
+
+        _dialogue.Play("croc", def.SpriteId, new[]
+        {
+            new DialogueScene.Line(false, def.Name,
+                                   Career.InterludeLine(def, ended.PhaseIndex, rivalAhead)),
+            new DialogueScene.Line(true, "CROC", CrocInterludeReply(rivalAhead, ended.KnockedOut)),
+        });
+    }
+
+    private static string CrocInterludeReply(bool rivalAhead, bool knockedOut) =>
+        knockedOut ? "*spits out a bomb*"
+        : rivalAhead ? "*stomach growls, louder*"
+        : "*licks the plate clean*";
 
     private void OpenShop()
     {
@@ -376,6 +423,7 @@ public partial class GameRoot : Node2D
                 return;
 
             case Phase.Intro:
+            case Phase.Interlude:
                 if (TakeChomp()) _dialogue.Advance();
                 return;
 
@@ -405,13 +453,16 @@ public partial class GameRoot : Node2D
     public bool AutoPlayShouldPress()
     {
         if (_phase != Phase.Fighting) return true;   // every other screen wants a press
-        if (_match is null) return false;
+        if (_bout is null) return false;
 
-        var jaw = new JawZone(JawCenterX, JawHalfWidth);
-        foreach (var item in _match.Items)
+        var phase = _bout.Current;
+        var jaw = phase.EffectiveJaw;
+
+        foreach (var item in phase.Items)
         {
-            // Bite edible food on sight; leave hazards alone, as a player should.
-            if (item.IsEdible && jaw.Overlaps(item)) return true;
+            // Bite anything edible on sight - which now includes buffs and the coin -
+            // and leave hazards alone, as a player should.
+            if (phase.IsEdibleNow(item) && jaw.Overlaps(item)) return true;
         }
 
         return false;
@@ -429,7 +480,7 @@ public partial class GameRoot : Node2D
 
     private void Fight(float dt)
     {
-        if (_match is null) return;
+        if (_bout is null) return;
 
         // Hit-stop freezes the session rather than slowing it: because Core is
         // dt-driven, not calling Tick cannot consume part of a later timing window.
@@ -439,32 +490,43 @@ public partial class GameRoot : Node2D
             return;
         }
 
-        if (TakeChomp()) Render(_match.Chomp());
+        if (TakeChomp()) Render(_bout.Chomp());
         if (_phase != Phase.Fighting) return;
 
-        Render(_match.Tick(dt));
+        Render(_bout.Tick(dt));
         if (_phase != Phase.Fighting) return;
 
-        var frenzy = _match.Frenzy.Fraction;
-        _conveyor.Advance(_match.BeltSpeed, dt);
+        var phase = _bout.Current;
+        var frenzy = phase.Frenzy.Fraction;
+
+        _conveyor.Advance(phase.BeltSpeed, dt);
         _conveyor.SetFrenzy(frenzy);
 
-        // Ask the same zone the judge uses, so what lights up is exactly what scores.
-        var jaw = new JawZone(JawCenterX, JawHalfWidth);
+        // Ask the phase for the zone the judge is actually using, so what lights up is
+        // exactly what scores - including while hunger has it held open.
+        var jaw = phase.EffectiveJaw;
+        _conveyor.SetJawHalfWidth(jaw.HalfWidth);
+
         var occupied = false;
-        foreach (var item in _match.Items)
+        foreach (var item in phase.Items)
         {
             if (!jaw.Overlaps(item)) continue;
             occupied = true;
             break;
         }
+
         _conveyor.SetZoneOccupied(occupied);
         _frenzy.SetAmount(frenzy);
         _croc.SetGlow(frenzy, _skinTint);
 
-        _belt.Sync(_match.Items);
-        _belt.PruneMissing(_match.Items);
-        _hud.Update(_match.State, _match.OpponentScore, frenzy, _save.Money);
+        _belt.Sync(phase.Items);
+        _belt.PruneMissing(phase.Items);
+        _hud.Update(phase.State, _bout.OpponentScore, frenzy, _save.Money);
+        _hud.SetPot(phase.Pot.Amount, Pot.MultiplierForCombo(phase.State.Combo), _bout.PlayerScore);
+        _hud.SetHunger(phase.Hunger.Charge, phase.Hunger.IsActive);
+        _hud.SetCarried(_bout.PlayerScore);
+        _hud.SetShield(phase.Buffs.HasShield);
+        _croc.SetMagnet(phase.Buffs.MagnetBitesRemaining > 0);
 
         UpdateRivalReactions(dt);
     }
@@ -534,12 +596,95 @@ public partial class GameRoot : Node2D
                 case StrikeAdded:
                     OnStrike();
                     break;
-                case MatchEnded ended:
-                    EndMatch(ended);
+                case PhaseStarted started:
+                    _overlay.Flash(started.Phase.Name);
+                    _sfx.Play(Sfx.Blip, 1.1f);
+                    _zoom = 1f;
+                    _hud.SetPhase(started.PhaseIndex, started.Phase.Name);
+                    _backdrop.SetPhase(started.PhaseIndex);
+                    break;
+                case PhaseEnded ended:
+                    StartInterlude(ended);
+                    break;
+                case PhaseKnockout:
+                    _overlay.Flash("OUT!");
+                    _sfx.Play(Sfx.Lose);
+                    _shake = StrikeShake * 1.6f;
+                    _flashAlpha = 1f;
+                    break;
+                case CoinSpawned coin:
+                    _belt.SetCoinValue(coin.Item.Id, coin.Value);
+                    _sfx.Play(Sfx.Blip, 1.4f);
+                    break;
+                case PotBanked banked:
+                    OnBanked(banked);
+                    break;
+                case PotWiped wiped when wiped.Lost > 0:
+                    _sfx.Play(Sfx.Whiff, 0.7f);
+                    _overlay.Flash($"-{wiped.Lost}");
+                    break;
+                case BuffTaken taken:
+                    _sfx.Play(Sfx.Frenzy, BuffPitch(taken.Kind));
+                    _overlay.Flash(BuffLabel(taken.Kind));
+                    _croc.Punch(1.2f);
+                    break;
+                case HungerStarted:
+                    _overlay.Flash("HUNGRY");
+                    _sfx.Play(Sfx.Frenzy, 0.6f);
+                    _flashAlpha = 0.6f;
+                    _zoom = 1.4f;
+                    _rival.Panic(RivalLine(r => r.LinePanic));
+                    _barkCooldown = BarkCooldown;
+                    break;
+                case HungerEnded:
+                    _sfx.Play(Sfx.Blip, 0.6f);
+                    break;
+                case BoutEnded bout:
+                    EndBout(bout);
                     return;
             }
         }
     }
+
+    /// <summary>
+    /// Banking the pot is the rare moment this design has, so it gets everything at
+    /// once - hit-stop, a gold wash, a burst, its own sound. Effects that fire
+    /// constantly stop being events.
+    /// </summary>
+    private void OnBanked(PotBanked banked)
+    {
+        _sfx.Play(Sfx.Coin, 1f + 0.04f * banked.Multiplier);
+        _goldFlash = 1f;
+        _zoom = 1f;
+        _hitStop = HitStopSeconds * 2f;
+        _croc.Punch(1.4f);
+        _overlay.Flash($"+{banked.Paid}");
+        _crumbs.Burst(new Vector2(JawCenterX, BeltY), 18, 1.6f);
+
+        if (banked.Paid > 100)
+        {
+            _rival.Rattle(RivalLine(r => r.LineLosing));
+            _barkCooldown = BarkCooldown;
+        }
+    }
+
+    private static string BuffLabel(BuffKind kind) => kind switch
+    {
+        BuffKind.Slow => "SLOW",
+        BuffKind.Shield => "SHIELD",
+        BuffKind.Magnet => "MAGNET",
+        _ => "GOLD TOOTH",
+    };
+
+    /// <summary>Pitch climbs with the buff's strength, so which one landed is audible
+    /// before the banner is legible.</summary>
+    private static float BuffPitch(BuffKind kind) => kind switch
+    {
+        BuffKind.Slow => 0.8f,
+        BuffKind.Shield => 1.0f,
+        BuffKind.Magnet => 1.2f,
+        _ => 1.5f,
+    };
 
     private void OnEaten(Chomped chomped)
     {
@@ -582,12 +727,12 @@ public partial class GameRoot : Node2D
     /// </summary>
     private void UpdateRivalReactions(float dt)
     {
-        if (_match is null) return;
+        if (_bout is null) return;
 
         _barkCooldown = Mathf.Max(0f, _barkCooldown - dt);
 
-        var state = _match.State;
-        var ahead = state.Score > _match.OpponentScore;
+        var state = _bout.Current.State;
+        var ahead = _bout.PlayerScore > _bout.OpponentScore;
 
         if (_barkCooldown <= 0f)
         {
@@ -610,8 +755,8 @@ public partial class GameRoot : Node2D
         }
 
         // The closing seconds, with the match already lost for them.
-        if (!_clutchBarked && state.TimeRemaining <= 8f
-            && state.Score > _match.OpponentScore * 1.25f)
+        if (!_clutchBarked && state.TimeRemaining <= 4f
+            && _bout.PlayerScore > _bout.OpponentScore * 1.25f)
         {
             _clutchBarked = true;
             _rival.Panic(RivalLine(r => r.LinePanic));
@@ -622,7 +767,7 @@ public partial class GameRoot : Node2D
     }
 
     private string RivalLine(Func<OpponentDef, string> pick) =>
-        _match is null ? "" : pick(_match.Def.Opponent);
+        _bout is null ? "" : pick(_bout.Def.Opponent);
 
     private void OnStrike()
     {

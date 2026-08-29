@@ -45,6 +45,22 @@ public partial class StrikeMeter : Node2D
         QueueRedraw();
     }
 
+    /// <summary>
+    /// A shield rides as a fourth tooth, green so it is plainly not one of the three.
+    /// Answering "what am I carrying" through the meter that already exists beats a new
+    /// indicator, and it reads the right way round: a present tooth is something you
+    /// have, not something you have spent.
+    /// </summary>
+    public void SetShield(bool has)
+    {
+        if (_shield == has) return;
+
+        _shield = has;
+        QueueRedraw();
+    }
+
+    private bool _shield;
+
     public void Reset()
     {
         _lost = 0;
@@ -77,6 +93,13 @@ public partial class StrikeMeter : Node2D
             else if (lost) DrawSocket(x);
             else DrawTooth(x, 0f);
         }
+
+        if (!_shield) return;
+
+        var shieldX = MaxTeeth * (ToothWidth + Gap);
+        DrawTooth(shieldX, 0f);
+        DrawRect(new Rect2(shieldX + 1f, 3f, ToothWidth - 2f, ToothHeight - 2f),
+                 new Color(Ui.Green, 0.55f));
     }
 
     private void DrawTooth(float x, float offsetY)

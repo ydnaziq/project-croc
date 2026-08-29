@@ -37,6 +37,12 @@ public partial class MatchHud : Node2D
     private float _knobBob;
     private bool _timeLow;
 
+    private int _phaseIndex;
+    private Label _pot = null!;
+    private float _hungerCharge;
+    private bool _hungerActive;
+    private int _carried;
+
     public override void _Ready()
     {
         ZIndex = 20;
@@ -45,6 +51,11 @@ public partial class MatchHud : Node2D
         _playerScore = MakeLabel(new Vector2(0, GameRoot.BeltY + 42), Ui.Body, Ui.Green, HorizontalAlignment.Center);
         _combo = MakeLabel(new Vector2(0, GameRoot.BeltY + 62), Ui.Small, Ui.Gold, HorizontalAlignment.Center);
         _money = MakeLabel(new Vector2(-6, 8), Ui.Small, Ui.Gold, HorizontalAlignment.Right);
+
+        // The pot rides hard right, clear of the teeth on the left and the combo in
+        // the middle. At 180px wide every readout needs its own lane.
+        _pot = MakeLabel(new Vector2(-6, GameRoot.BeltY + 62), Ui.Small, Ui.Gold,
+                         HorizontalAlignment.Right);
 
         _teeth = new StrikeMeter { Position = new Vector2(8, GameRoot.ViewportHeight - 24) };
         AddChild(_teeth);
@@ -62,6 +73,42 @@ public partial class MatchHud : Node2D
         AddChild(label);
         return label;
     }
+
+    /// <summary>
+    /// Which act is live, shown only as pips. The name itself is announced by the
+    /// banner at each phase start - a second permanent copy of it competed with the
+    /// rival's name plate for the same row.
+    /// </summary>
+    public void SetPhase(int index, string name)
+    {
+        _phaseIndex = index;
+        QueueRedraw();
+    }
+
+    /// <summary>
+    /// The wager, shown as what it would pay rather than what has accrued - the
+    /// decision is about the payout, so that is the number on screen. It turns red
+    /// once declining a coin is risking more than the bout is currently worth.
+    /// </summary>
+    public void SetPot(int amount, int multiplier, int scoreSoFar)
+    {
+        _pot.Text = amount == 0 ? "" : $"POT {amount * multiplier} x{multiplier}";
+        _pot.LabelSettings.FontColor = amount * multiplier > scoreSoFar ? Ui.Red : Ui.Gold;
+    }
+
+    /// <summary>Hunger has to be visible while it fills, not only when it fires: a
+    /// meter the player only ever sees full teaches them nothing about why.</summary>
+    public void SetHunger(float charge, bool active)
+    {
+        _hungerCharge = charge;
+        _hungerActive = active;
+        QueueRedraw();
+    }
+
+    /// <summary>The carried bout total, which is the number that decides the bout.</summary>
+    public void SetCarried(int score) => _carried = score;
+
+    public void SetShield(bool has) => _teeth.SetShield(has);
 
     public void Update(MatchState state, int rivalScore, float frenzyFraction, int money)
     {
@@ -177,6 +224,21 @@ public partial class MatchHud : Node2D
         {
             Ui.Meter(this, new Rect2(6, FrenzyBarY - 1, w - 12, 5f), _frenzyFraction,
                      FrenzyColor, new Color("2a2a3a"));
+        }
+
+        // Three pips beside the clock: which act, and how many are left.
+        for (var i = 0; i < Career.Phases.Count; i++)
+        {
+            Ui.Panel(this, new Rect2(6 + i * 7, 4, 5, 5),
+                     i < _phaseIndex ? Ui.Dim : i == _phaseIndex ? Ui.Gold : Ui.PanelFill);
+        }
+
+        // Hunger, along the bottom edge. Red because it only ever means one thing.
+        if (_hungerCharge > 0f || _hungerActive)
+        {
+            var meter = new Rect2(6, GameRoot.ViewportHeight - 6f, w - 12, 4f);
+            Ui.Meter(this, meter, _hungerActive ? 1f : _hungerCharge,
+                     _hungerActive ? Ui.Paper : Ui.Red, new Color("2a2a3a"));
         }
 
         // Strikes are drawn by the StrikeMeter child, not here.

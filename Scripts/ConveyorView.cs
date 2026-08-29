@@ -42,6 +42,21 @@ public partial class ConveyorView : Node2D
     /// <summary>Whether something is inside the jaws right now, so the zone can light up.</summary>
     public void SetZoneOccupied(bool occupied) => _occupied = occupied;
 
+    /// <summary>
+    /// The bite zone's real half-width, handed over each frame by the phase itself.
+    /// Drawing it from the judge's own number rather than from a shared constant is
+    /// what lets Hunger widen the window without the window lying about its size.
+    /// </summary>
+    public void SetJawHalfWidth(float halfWidth)
+    {
+        if (Mathf.IsEqualApprox(_jawHalfWidth, halfWidth)) return;
+
+        _jawHalfWidth = halfWidth;
+        QueueRedraw();
+    }
+
+    private float _jawHalfWidth = GameRoot.JawHalfWidth;
+
     public override void _Process(double delta)
     {
         // Eases rather than snaps, so a fast item does not make the zone strobe.
@@ -75,8 +90,8 @@ public partial class ConveyorView : Node2D
     /// </summary>
     private void DrawBiteZone()
     {
-        var left = GameRoot.JawCenterX - GameRoot.JawHalfWidth;
-        var right = GameRoot.JawCenterX + GameRoot.JawHalfWidth;
+        var left = GameRoot.JawCenterX - _jawHalfWidth;
+        var right = GameRoot.JawCenterX + _jawHalfWidth;
 
         // Tall enough to frame the food itself, which sits centred on the belt line.
         var top = GameRoot.BeltY - 10f;

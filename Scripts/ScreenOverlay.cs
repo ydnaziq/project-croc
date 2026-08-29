@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace CrocGame;
@@ -12,7 +13,8 @@ namespace CrocGame;
 public partial class ScreenOverlay : Node2D
 {
     private const float CardY = 120f;
-    private const float CardHeight = 92f;
+    private const float CardMinHeight = 68f;
+    private const float CardPaddingY = 12f;
     private const float CardMargin = 8f;
     private const float CardPadding = 6f;
 
@@ -25,6 +27,7 @@ public partial class ScreenOverlay : Node2D
     private float _bannerAge;
     private float _cardAge;
     private Color _accent = Ui.Paper;
+    private float _cardHeight = CardMinHeight;
 
     public override void _Ready()
     {
@@ -32,7 +35,6 @@ public partial class ScreenOverlay : Node2D
 
         _title = new Label
         {
-            Position = new Vector2(CardMargin + CardPadding, CardY + 12),
             Size = new Vector2(TextWidth, 28),
             HorizontalAlignment = HorizontalAlignment.Center,
             LabelSettings = Ui.Text(Ui.Title, Ui.Paper),
@@ -42,7 +44,6 @@ public partial class ScreenOverlay : Node2D
 
         _subtitle = Ui.WrappedLabel("", Ui.Small, new Color("c8c8d8"), TextWidth,
                                     HorizontalAlignment.Center);
-        _subtitle.Position = new Vector2(CardMargin + CardPadding, CardY + 48);
         AddChild(_subtitle);
 
         _banner = new Label
@@ -72,6 +73,23 @@ public partial class ScreenOverlay : Node2D
         _accent = accent;
         _title.Visible = true;
         _subtitle.Visible = true;
+
+        // The card is built around the text, not the text dropped into the card.
+        _title.Size = new Vector2(TextWidth, size + 6);
+        var block = new List<Label> { _title, _subtitle };
+        _cardHeight = Mathf.Max(CardMinHeight,
+                                Ui.ColumnHeight(block, gap: 6f) + CardPaddingY * 2f);
+
+        // Laid out here rather than in _Draw: changing a Control's rect during the draw
+        // pass re-enters Godot's layout and locks the frame up. Drawing draws; it does
+        // not decide where things go.
+        Ui.LayoutColumn(
+            block,
+            new Rect2(CardMargin + CardPadding, CardY + CardPaddingY,
+                      GameRoot.ViewportWidth - (CardMargin + CardPadding) * 2f,
+                      _cardHeight - CardPaddingY * 2f),
+            gap: 6f);
+
         _cardAge = 0f;
         QueueRedraw();
     }
@@ -127,13 +145,13 @@ public partial class ScreenOverlay : Node2D
 
         // The card wipes open vertically, which reads as a card being dealt rather
         // than a menu appearing.
-        var height = CardHeight * Mathf.Min(1f, _cardAge);
-        var y = CardY + (CardHeight - height) / 2f;
+        var height = _cardHeight * Mathf.Min(1f, _cardAge);
+        var y = CardY + (_cardHeight - height) / 2f;
         var rect = new Rect2(CardMargin, y, GameRoot.ViewportWidth - CardMargin * 2f, height);
 
         Ui.Panel(this, rect, new Color("101020", 0.95f));
 
-        if (height < CardHeight) return;
+        if (height < _cardHeight) return;
 
         // Accent rails top and bottom, one pixel thick like everything else.
         DrawRect(new Rect2(rect.Position.X + 1, rect.Position.Y + 1, rect.Size.X - 2, 1), _accent);

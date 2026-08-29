@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace CrocGame;
@@ -152,5 +153,51 @@ public static class Ui
         {
             canvas.DrawRect(new Rect2(rect.Position.X + 1, rect.Position.Y + 1, filled, rect.Size.Y - 2), fill);
         }
+    }
+
+    /// <summary>
+    /// Total height a stack of labels occupies, measured rather than assumed.
+    ///
+    /// The defect this exists to kill: boxes were a fixed size with text at fixed
+    /// offsets inside them, so a one-line subtitle floated in dead space and a
+    /// three-line one ran off the bottom. Nothing was centred; it was positioned to
+    /// look centred for one particular string.
+    /// </summary>
+    public static float ColumnHeight(IReadOnlyList<Label> labels, float gap)
+    {
+        var total = 0f;
+
+        for (var i = 0; i < labels.Count; i++)
+        {
+            if (!labels[i].Visible) continue;
+
+            total += WrappedHeight(labels[i]);
+            if (i < labels.Count - 1) total += gap;
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// Stacks the labels as one block, centred vertically in the box and each label
+    /// spanning its full width so its own HorizontalAlignment centres it horizontally.
+    /// Returns the block's height.
+    /// </summary>
+    public static float LayoutColumn(IReadOnlyList<Label> labels, Rect2 box, float gap)
+    {
+        var height = ColumnHeight(labels, gap);
+        var y = box.Position.Y + Mathf.Round((box.Size.Y - height) / 2f);
+
+        foreach (var label in labels)
+        {
+            if (!label.Visible) continue;
+
+            var lineHeight = WrappedHeight(label);
+            label.Size = new Vector2(box.Size.X, lineHeight);
+            label.Position = new Vector2(box.Position.X, y);
+            y += lineHeight + gap;
+        }
+
+        return height;
     }
 }

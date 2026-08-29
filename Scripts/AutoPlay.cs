@@ -29,9 +29,10 @@ public partial class AutoPlay : Node
 
     /// <summary>Seconds at which to capture, chosen to land on each distinct screen.</summary>
     private static readonly float[] ShotTimes =
-        { 0.8f, 2.6f, 4.4f, 6.4f, 9.0f, 14.0f, 20.0f, 27.0f, 33.0f, 36.5f, 39.0f, 42.0f };
+        { 0.8f, 2.6f, 4.4f, 7.0f, 10.5f, 13.0f, 16.5f, 20.0f, 24.0f, 28.0f, 33.0f, 38.0f, 44.0f, 50.0f };
 
-    private const float QuitAfter = 45f;
+    // A bout is now ~27s of play plus two interludes, so 45s no longer reaches the shop.
+    private const float QuitAfter = 55f;
 
     public static bool Requested => OS.GetCmdlineUserArgs().Contains(Flag)
                                     || new List<string>(OS.GetCmdlineArgs()).Contains(Flag);

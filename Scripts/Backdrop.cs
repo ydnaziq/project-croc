@@ -20,6 +20,29 @@ public partial class Backdrop : Node2D
     private Texture2D? _arena;
     private float _time;
 
+    private int _phase;
+
+    /// <summary>
+    /// The arena changes between acts, so which phase this is can be read without a
+    /// word. Every variant stays darker and flatter than the belt and the croc - the
+    /// background has to lose to the foreground, whatever else it is doing.
+    /// </summary>
+    public void SetPhase(int index)
+    {
+        if (_phase == index) return;
+
+        _phase = index;
+        QueueRedraw();
+    }
+
+    /// <summary>Wash laid over the arena, one per act: plain, dimmed, then hot.</summary>
+    private Color PhaseWash => _phase switch
+    {
+        0 => new Color(0f, 0f, 0f, 0f),
+        1 => new Color("100818", 0.35f),
+        _ => new Color("380810", 0.30f),
+    };
+
     public override void _Ready()
     {
         ZIndex = -10;
@@ -41,6 +64,14 @@ public partial class Backdrop : Node2D
             DrawTextureRect(_arena, new Rect2(0, 0, GameRoot.ViewportWidth, GameRoot.ViewportHeight), false);
         }
 
+        // The act's wash. Each phase sits at a different value so the change of act is
+        // visible without a word, while everything stays behind the foreground.
+        var wash = PhaseWash;
+        if (wash.A > 0f)
+        {
+            DrawRect(new Rect2(0, 0, GameRoot.ViewportWidth, GameRoot.ViewportHeight), wash);
+        }
+
         DrawBulbs();
     }
 
@@ -51,12 +82,15 @@ public partial class Backdrop : Node2D
     private void DrawBulbs()
     {
         const int count = 9;
-        var phase = (int)(_time * 6f);
+
+        // The marquee chases faster each act, so the arena itself gets more urgent.
+        var phase = (int)(_time * (6f + _phase * 3f));
 
         for (var i = 0; i < count; i++)
         {
             var x = 6 + i * 20;
-            var lit = (i + phase) % 3 == 0;
+            // More bulbs lit as the bout escalates: a filling house.
+            var lit = (i + phase) % (3 - Mathf.Min(_phase, 1)) == 0;
 
             DrawRect(new Rect2(x - 1, 112, 5, 5), Ink);
             DrawRect(new Rect2(x, 113, 3, 3), lit ? BulbOn : BulbOff);

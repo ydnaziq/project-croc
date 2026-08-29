@@ -17,7 +17,8 @@ public partial class DialogueScene : Node2D
     public readonly record struct Line(bool FromPlayer, string Speaker, string Text);
 
     // The box occupies the bottom of the screen. One number, easy to retune.
-    private const float BoxTopY = 186f;
+    private const float BoxMinHeight = 56f;
+    private const float BoxBottomY = GameRoot.ViewportHeight - Margin;
     private const float Margin = 6f;
     private const float Padding = 8f;
 
@@ -42,6 +43,8 @@ public partial class DialogueScene : Node2D
     private int _index;
     private float _age;
     private float _typed;
+    private float _boxTop = BoxBottomY - BoxMinHeight;
+    private float _nameRailY;
 
     public override void _Ready()
     {
@@ -58,14 +61,12 @@ public partial class DialogueScene : Node2D
 
         _name = new Label
         {
-            Position = new Vector2(Margin + Padding, BoxTopY + 6f),
             Size = new Vector2(width, Ui.Body + 4),
             LabelSettings = Ui.Text(Ui.Body, Ui.Gold),
         };
         AddChild(_name);
 
         _body = Ui.WrappedLabel("", Ui.Small, Ui.Paper, width);
-        _body.Position = new Vector2(Margin + Padding, BoxTopY + 30f);
         AddChild(_body);
     }
 
@@ -123,6 +124,25 @@ public partial class DialogueScene : Node2D
         _player.Scale = Vector2.One * (line.FromPlayer ? SpeakingScale : ListeningScale);
         _rival.Scale = Vector2.One * (line.FromPlayer ? ListeningScale : SpeakingScale);
 
+        // The body wraps to however many lines it needs and the box grows upward to
+        // hold them - measured, never estimated. The full text is set first so the
+        // label reports its real line count, then cleared for the typing-on.
+        _body.Text = line.Text;
+
+        var content = Ui.ColumnHeight(new List<Label> { _name, _body }, gap: 8f);
+        _boxTop = BoxBottomY - Mathf.Max(BoxMinHeight, content + Padding * 2f + 8f);
+
+        Ui.LayoutColumn(
+            new List<Label> { _name, _body },
+            new Rect2(Margin + Padding, _boxTop + Padding,
+                      GameRoot.ViewportWidth - (Margin + Padding) * 2f,
+                      BoxBottomY - _boxTop - Padding * 2f),
+            gap: 8f);
+
+        _nameRailY = _name.Position.Y + Ui.WrappedHeight(_name) + 3f;
+
+        _body.Text = "";
+
         QueueRedraw();
     }
 
@@ -163,11 +183,11 @@ public partial class DialogueScene : Node2D
         // A floor line under the actors so they are standing somewhere.
         DrawRect(new Rect2(0, ActorY + 34f, w, 1), new Color("000000", 0.5f));
 
-        Ui.RaisedPanel(this, new Rect2(Margin, BoxTopY, w - Margin * 2f, h - BoxTopY - Margin),
+        Ui.RaisedPanel(this, new Rect2(Margin, _boxTop, w - Margin * 2f, BoxBottomY - _boxTop),
                        new Color("101020", 0.97f), new Color("4a4a70"));
 
         // Rail under the name, separating speaker from speech.
-        DrawRect(new Rect2(Margin + Padding, BoxTopY + 26f, w - (Margin + Padding) * 2f, 1),
+        DrawRect(new Rect2(Margin + Padding, _nameRailY, w - (Margin + Padding) * 2f, 1),
                  new Color("4a4a70"));
 
         // Blinking prompt, once the line has finished arriving.
