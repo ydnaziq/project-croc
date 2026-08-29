@@ -101,8 +101,10 @@ Banking every coin on sight is safe, viable play - greed is an option, not a tax
 TOOTH is 8px and arrives between two bombs. Risk and reward are the same axis, and it
 is one the player can read from across the screen.
 
-**Short bouts.** Matches run 20-26 seconds. Past about half a minute the timing stops
-being exciting and starts being work.
+**Short bouts.** A phase runs 8-10 seconds and a whole bout is 27 seconds of play,
+broken by two interludes. Past about half a minute of *continuous* timing the pressure
+stops being exciting and starts being work, which is why the breaks are load-bearing
+rather than decorative.
 
 **An opponent, not a target score.** The rival eats visibly, reacts to the lead
 changing, panics at a long combo. The same points landing beside a reacting rival feel
