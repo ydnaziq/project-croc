@@ -7,7 +7,7 @@ namespace CrocGame.Core;
 public sealed class FoodItem
 {
     public FoodItem(int id, string typeId, float x, float halfWidth,
-                    bool isEdible, int score, IMovement movement)
+                    bool isEdible, int score, IMovement movement, string power = "")
     {
         Id = id;
         TypeId = typeId;
@@ -16,6 +16,7 @@ public sealed class FoodItem
         IsEdible = isEdible;
         Score = score;
         Movement = movement;
+        Power = power;
     }
 
     public int Id { get; }
@@ -25,6 +26,9 @@ public sealed class FoodItem
     public bool IsEdible { get; }
     public int Score { get; }
     public IMovement Movement { get; }
+
+    /// <summary>The buff this item grants when bitten, or "" for ordinary food.</summary>
+    public string Power { get; }
 
     /// <summary>Seconds this item has been on the belt. Drives movement behaviors.</summary>
     public float Age { get; set; }

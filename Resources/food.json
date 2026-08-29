@@ -7,5 +7,10 @@
   { "id": "golden", "width": 12, "edible": true,  "movement": "bounce",   "score": 60, "minEatenToAppear": 10, "weight": 1 },
 
   { "id": "bomb",   "width": 16, "edible": false, "movement": "constant", "score": 0,  "minEatenToAppear": 18, "weight": 3 },
-  { "id": "boot",   "width": 16, "edible": false, "movement": "stutter",  "score": 0,  "minEatenToAppear": 30, "weight": 2 }
+  { "id": "boot",   "width": 16, "edible": false, "movement": "stutter",  "score": 0,  "minEatenToAppear": 30, "weight": 2 },
+
+  { "id": "slow",      "width": 16, "edible": true, "movement": "constant", "score": 0, "minEatenToAppear": 0, "weight": 4, "power": "slow" },
+  { "id": "shield",    "width": 14, "edible": true, "movement": "constant", "score": 0, "minEatenToAppear": 0, "weight": 3, "power": "shield" },
+  { "id": "magnet",    "width": 10, "edible": true, "movement": "constant", "score": 0, "minEatenToAppear": 0, "weight": 2, "power": "magnet" },
+  { "id": "goldtooth", "width": 8,  "edible": true, "movement": "bounce",   "score": 0, "minEatenToAppear": 0, "weight": 1, "power": "goldtooth" }
 ]

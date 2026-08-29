@@ -52,7 +52,8 @@ public sealed class SpawnDirector
             halfWidth: type.Width / 2f,
             isEdible: type.Edible,
             score: type.Score,
-            movement: SelectMovement(type, difficulty));
+            movement: SelectMovement(type, difficulty),
+            power: type.Power);
     }
 
     private float Spacing(Difficulty d) => d.SpacingMin + (d.SpacingMax - d.SpacingMin) * _rng.NextFloat();
