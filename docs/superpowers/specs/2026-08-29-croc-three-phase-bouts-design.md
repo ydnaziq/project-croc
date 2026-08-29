@@ -261,10 +261,19 @@ The static feel is the oldest complaint and gets the largest pass. Two layers:
 
 - **Croc:** new tags added to `croc_sheet.png` — `chew`, `flinch`, `gulp`, `taunt`,
   `exhausted`. The existing `idle` / `eat` / `celebrate` tags stay.
-- **Rivals:** all four are single static PNGs today. Each becomes a small sheet with
-  `idle`, `eat`, `react`, `panic`. This is the largest single item in the whole
-  document and the one that most directly answers "too static" — the rival is on screen
-  for the entire bout and currently never moves.
+
+All character art is generated, not painted: `Art/Tools/cast_gen.py` authors each
+sprite as 16-column half-rows mirrored to 32x32, composes animation tags from pose
+patches, and emits an Aseprite batch script that bakes the frames, durations and tags
+into the `.aseprite` sources. A new tag is a pose patch plus a row in `animations()`,
+which is why adding five of them is tractable. Nothing is hand-edited on top of the
+generated output.
+- **Rivals:** all four already have 18-frame sheets with `idle` / `celebrate` / `eat`,
+  built by `Art/Tools/cast_gen.py`; what they lack is the reactive vocabulary the bout
+  now needs. Each gains `react` and `panic` tags. `RivalView` today only ever plays
+  `idle` and `eat`, so part of this is spending animation that already exists.
+- **Buff-taken poses:** the croc gets a distinct frame per buff so SLOW and GOLD TOOTH
+  are told apart by the sprite, not only by a banner.
 - **Buff sprites:** four new 16x16 items (§2.2) plus the coin (§2.3).
 - **Accessories:** four 16x16 cosmetics (§5).
 
